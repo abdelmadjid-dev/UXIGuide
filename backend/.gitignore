@@ -1,4 +1,15 @@
 .idea/
-app/.env
-app/.adk
-app/subagents/.adk
+
+# Byte-compiled / optimized / DLL files
+**/__pycache__/
+**/*.py[cod]
+**/*$py.class
+
+# Distribution / packaging
+.Python
+
+# ADK
+**/.adk/
+
+# Environment
+**/.env
