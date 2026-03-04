@@ -17,7 +17,9 @@
 
 - [x] make Live API run locally, a local `index.html` is used to communicate with the backend
     - NOTE: to run locally for tests, use: `poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000`
-- [ ] add subagents/tools to analyze images and define next actions & link them to orchestrator agent
+- [x] add subagents/tools to analyze images and define next actions & link them to orchestrator agent
+    - as of now: subagents should be avoided since Live API model can deal with these tasks. Tools require an analysis
+      on whether they are needed or not considering that they are handled automatically by ADK
 - [ ] communicate with orchestrator and its tools/subagents
     - receive request to get screenshot
     - send screenshot to be analyzed
