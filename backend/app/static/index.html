@@ -3,25 +3,15 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ADK Gemini Live API Toolkit Demo</title>
+    <title>UXIGuide Demo</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="/static/js/app.js" type="module"></script>
   </head>
 
   <body>
     <header>
-      <h1>ADK Gemini Live API Toolkit Demo</h1>
+      <h1>UXIGuide Demo</h1>
       <div class="subtitle">Real-time bidirectional streaming with Google ADK</div>
-      <div class="header-options">
-        <label class="header-checkbox" title="Enable model to proactively respond without explicit prompts (Native audio models only)">
-          <input type="checkbox" id="enableProactivity">
-          <span>Proactivity</span>
-        </label>
-        <label class="header-checkbox" title="Enable model to detect and adapt to emotional cues (Native audio models only)">
-          <input type="checkbox" id="enableAffectiveDialog">
-          <span>Affective Dialog</span>
-        </label>
-      </div>
       <div class="connection-status">
         <span class="status-indicator" id="statusIndicator"></span>
         <span id="statusText">Connecting...</span>
@@ -44,7 +34,6 @@
               />
               <button type="submit" id="sendButton" disabled>Send</button>
               <button type="button" id="startAudioButton">Start Audio</button>
-              <button type="button" id="cameraButton">📷 Camera</button>
             </div>
           </form>
         </div>
@@ -62,23 +51,6 @@
           </div>
         </div>
         <div id="consoleContent" class="console-content"></div>
-      </div>
-    </div>
-
-    <!-- Camera Preview Modal -->
-    <div id="cameraModal" class="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>Camera Preview</h3>
-          <button id="closeCameraModal" class="close-btn">&times;</button>
-        </div>
-        <div class="modal-body">
-          <video id="cameraPreview" autoplay playsinline></video>
-        </div>
-        <div class="modal-footer">
-          <button id="cancelCamera" class="btn-secondary">Cancel</button>
-          <button id="captureImage" class="btn-primary">📷 Send Image</button>
-        </div>
       </div>
     </div>
   </body>
