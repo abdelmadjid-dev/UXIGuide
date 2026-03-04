@@ -105,7 +105,6 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str, session_id: str
                 elif json_message.get("type") == "image":
                     image_data = base64.b64decode(json_message["data"])
                     mime_type = json_message.get("mimeType", "image/jpeg")
-
                     image_blob = types.Blob(mime_type=mime_type, data=image_data)
                     live_request_queue.send_realtime(image_blob)
 
@@ -126,7 +125,7 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str, session_id: str
     except WebSocketDisconnect:
         print("Client disconnected normally")
     except Exception as e:
-        print(f"Unexpected error in streaming tasks: {e}", exc_info=True)
+        print(f"Unexpected error in streaming tasks: {e}")
     finally:
         # Always close the queue, even if exceptions occurred
         live_request_queue.close()
