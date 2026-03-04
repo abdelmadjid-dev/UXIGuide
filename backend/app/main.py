@@ -1,15 +1,22 @@
 import asyncio
 import base64
 import json
+from pathlib import Path
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from google.adk import Runner
 from google.adk.agents import RunConfig, LiveRequestQueue
 from google.adk.agents.run_config import StreamingMode
 from google.adk.sessions import InMemorySessionService
 from google.genai import types
+from starlette.responses import FileResponse
+from starlette.staticfiles import StaticFiles
 
 from app.agent import agent
+
+# Load environment variables from .env file BEFORE importing agent
+load_dotenv(Path(__file__).parent / ".env")
 
 # Application name constant
 APP_NAME = "uxiguide-agent"
@@ -20,16 +27,29 @@ APP_NAME = "uxiguide-agent"
 
 app = FastAPI()
 
+# Mount static files, TODO: this is used for testing, to be removed on production
+static_dir = Path(__file__).parent / "static"
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
 # Define your session service
 session_service = InMemorySessionService()
 
 # Define your runner
 runner = Runner(app_name=APP_NAME, agent=agent, session_service=session_service)
 
+# ========================================
+# HTTP Endpoints
+# ========================================
+
+@app.get("/")
+async def root():
+    """Serve the index.html page."""
+    return FileResponse(Path(__file__).parent / "static" / "index.html")
 
 # ========================================
 # WebSocket Endpoint
 # ========================================
+
 @app.websocket("/ws/{user_id}/{session_id}")
 async def websocket_endpoint(websocket: WebSocket, user_id: str, session_id: str) -> None:
     await websocket.accept()
