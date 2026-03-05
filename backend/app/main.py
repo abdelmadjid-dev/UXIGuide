@@ -55,12 +55,8 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str, session_id: str
     await websocket.accept()
 
     # Build RunConfig with optional proactivity and affective dialog
-    response_modalities = ["AUDIO"]
     run_config = RunConfig(
         streaming_mode=StreamingMode.BIDI,
-        response_modalities=response_modalities,
-        input_audio_transcription=types.AudioTranscriptionConfig(),
-        output_audio_transcription=types.AudioTranscriptionConfig(),
         session_resumption=types.SessionResumptionConfig(),
         # TODO: potentially handle proactivity and affective dialog
     )

@@ -30,33 +30,6 @@ const clearConsoleBtn = document.getElementById("clearConsole");
 const showAudioEventsCheckbox = document.getElementById("showAudioEvents");
 let currentMessageId = null;
 let currentBubbleElement = null;
-let currentInputTranscriptionId = null;
-let currentInputTranscriptionElement = null;
-let currentOutputTranscriptionId = null;
-let currentOutputTranscriptionElement = null;
-let inputTranscriptionFinished = false; // Track if input transcription is complete for this turn
-let hasOutputTranscriptionInTurn = false; // Track if output transcription delivered the response
-
-// Helper function to clean spaces between CJK characters
-// Removes spaces between Japanese/Chinese/Korean characters while preserving spaces around Latin text
-function cleanCJKSpaces(text) {
-    // CJK Unicode ranges: Hiragana, Katakana, Kanji, CJK Unified Ideographs, Fullwidth forms
-    const cjkPattern = /[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf\uff00-\uffef]/;
-
-    // Remove spaces between two CJK characters
-    return text.replace(/(\S)\s+(?=\S)/g, (match, char1) => {
-        // Get the character after the space(s)
-        const nextCharMatch = text.match(new RegExp(char1 + '\\s+(.)', 'g'));
-        if (nextCharMatch && nextCharMatch.length > 0) {
-            const char2 = nextCharMatch[0].slice(-1);
-            // If both characters are CJK, remove the space
-            if (cjkPattern.test(char1) && cjkPattern.test(char2)) {
-                return char1;
-            }
-        }
-        return match;
-    });
-}
 
 // Console logging functionality
 function formatTimestamp() {
@@ -226,16 +199,6 @@ function updateMessageBubble(element, text, isPartial = false) {
     }
 }
 
-function takeScreenshot() {
-    html2canvas(document.querySelector("#capture")).then(canvas => {
-        // Create a link to download the image
-        const image = canvas.toDataURL("image/png");
-        const base64Data = image.split(',')[1];
-        sendMessage("Here's the screenshot, what should I do now?");
-        sendImage(base64Data);
-    });
-}
-
 // Add a system message
 function addSystemMessage(text) {
     const messageDiv = document.createElement("div");
@@ -295,6 +258,9 @@ function connectWebsocket() {
             url: ws_url
         }, '🔌', 'system');
 
+        // Send Initial Screenshot
+        takeScreenshot();
+
         // Enable the Send button
         document.getElementById("sendButton").disabled = false;
         addSubmitHandler();
@@ -317,63 +283,9 @@ function connectWebsocket() {
         } else if (adkEvent.interrupted) {
             eventSummary = 'Interrupted';
             eventEmoji = '⏸️';
-        } else if (adkEvent.inputTranscription) {
-            // Show transcription text in summary
-            const transcriptionText = adkEvent.inputTranscription.text || '';
-            const truncated = transcriptionText.length > 60
-                ? transcriptionText.substring(0, 60) + '...'
-                : transcriptionText;
-            eventSummary = `Input Transcription: "${truncated}"`;
-            eventEmoji = '📝';
-        } else if (adkEvent.outputTranscription) {
-            // Show transcription text in summary
-            const transcriptionText = adkEvent.outputTranscription.text || '';
-            const truncated = transcriptionText.length > 60
-                ? transcriptionText.substring(0, 60) + '...'
-                : transcriptionText;
-            eventSummary = `Output Transcription: "${truncated}"`;
-            eventEmoji = '📝';
-        } else if (adkEvent.usageMetadata) {
-            // Show token usage information
-            const usage = adkEvent.usageMetadata;
-            const promptTokens = usage.promptTokenCount || 0;
-            const responseTokens = usage.candidatesTokenCount || 0;
-            const totalTokens = usage.totalTokenCount || 0;
-            eventSummary = `Token Usage: ${totalTokens.toLocaleString()} total (${promptTokens.toLocaleString()} prompt + ${responseTokens.toLocaleString()} response)`;
-            eventEmoji = '📊';
         } else if (adkEvent.content && adkEvent.content.parts) {
+            const hasFunctionCall = adkEvent.content.parts.some(p => p.functionResponse);
             const hasText = adkEvent.content.parts.some(p => p.text);
-            const hasAudio = adkEvent.content.parts.some(p => p.inlineData);
-            const hasExecutableCode = adkEvent.content.parts.some(p => p.executableCode);
-            const hasCodeExecutionResult = adkEvent.content.parts.some(p => p.codeExecutionResult);
-
-            if (hasExecutableCode) {
-                // Show executable code
-                const codePart = adkEvent.content.parts.find(p => p.executableCode);
-                if (codePart && codePart.executableCode) {
-                    const code = codePart.executableCode.code || '';
-                    const language = codePart.executableCode.language || 'unknown';
-                    const truncated = code.length > 60
-                        ? code.substring(0, 60).replace(/\n/g, ' ') + '...'
-                        : code.replace(/\n/g, ' ');
-                    eventSummary = `Executable Code (${language}): ${truncated}`;
-                    eventEmoji = '💻';
-                }
-            }
-
-            if (hasCodeExecutionResult) {
-                // Show code execution result
-                const resultPart = adkEvent.content.parts.find(p => p.codeExecutionResult);
-                if (resultPart && resultPart.codeExecutionResult) {
-                    const outcome = resultPart.codeExecutionResult.outcome || 'UNKNOWN';
-                    const output = resultPart.codeExecutionResult.output || '';
-                    const truncatedOutput = output.length > 60
-                        ? output.substring(0, 60).replace(/\n/g, ' ') + '...'
-                        : output.replace(/\n/g, ' ');
-                    eventSummary = `Code Execution Result (${outcome}): ${truncatedOutput}`;
-                    eventEmoji = outcome === 'OUTCOME_OK' ? '✅' : '❌';
-                }
-            }
 
             if (hasText) {
                 // Show text preview in summary
@@ -391,32 +303,30 @@ function connectWebsocket() {
                 }
             }
 
-            if (hasAudio) {
-                // Extract audio info for summary
-                const audioPart = adkEvent.content.parts.find(p => p.inlineData);
-                if (audioPart && audioPart.inlineData) {
-                    const mimeType = audioPart.inlineData.mimeType || 'unknown';
-                    const dataLength = audioPart.inlineData.data ? audioPart.inlineData.data.length : 0;
-                    // Base64 string length / 4 * 3 gives approximate bytes
-                    const byteSize = Math.floor(dataLength * 0.75);
-                    eventSummary = `Audio Response: ${mimeType} (${byteSize.toLocaleString()} bytes)`;
-                    eventEmoji = '🔊';
+            if (hasFunctionCall) {
+                // Show text preview in summary
+                const namePart = adkEvent.content.parts.find(p => p.functionResponse);
+                if (namePart && namePart.name) {
+                    const text = namePart.name;
+                    const truncated = text.length > 80
+                        ? text.substring(0, 80) + '...'
+                        : text;
+                    eventSummary = `Function Call: "${truncated}"`;
+                    eventEmoji = '⚙️';
                 } else {
-                    eventSummary = 'Audio Response';
-                    eventEmoji = '🔊';
+                    eventSummary = 'Function Response';
+                    eventEmoji = '⚙️';
                 }
-
-                // Log audio event with isAudio flag (filtered by checkbox)
-                const sanitizedEvent = sanitizeEventForDisplay(adkEvent);
-                addConsoleEntry('incoming', eventSummary, sanitizedEvent, eventEmoji, author, true);
             }
+
         }
 
         // Create a sanitized version for console display (replace large audio data with summary)
         // Skip if already logged as audio event above
         const isAudioOnlyEvent = adkEvent.content && adkEvent.content.parts &&
             adkEvent.content.parts.some(p => p.inlineData) &&
-            !adkEvent.content.parts.some(p => p.text);
+            !adkEvent.content.parts.some(p => p.text) &&
+            !adkEvent.content.parts.some(p => p.functionResponse);
         if (!isAudioOnlyEvent) {
             const sanitizedEvent = sanitizeEventForDisplay(adkEvent);
             addConsoleEntry('incoming', eventSummary, sanitizedEvent, eventEmoji, author);
@@ -432,20 +342,9 @@ function connectWebsocket() {
                     typingIndicator.remove();
                 }
             }
-            // Remove typing indicator from current output transcription
-            if (currentOutputTranscriptionElement) {
-                const textElement = currentOutputTranscriptionElement.querySelector(".bubble-text");
-                const typingIndicator = textElement.querySelector(".typing-indicator");
-                if (typingIndicator) {
-                    typingIndicator.remove();
-                }
-            }
+
             currentMessageId = null;
             currentBubbleElement = null;
-            currentOutputTranscriptionId = null;
-            currentOutputTranscriptionElement = null;
-            inputTranscriptionFinished = false; // Reset for next turn
-            hasOutputTranscriptionInTurn = false; // Reset for next turn
             return;
         }
 
@@ -470,156 +369,15 @@ function connectWebsocket() {
                 currentBubbleElement.classList.add("interrupted");
             }
 
-            // Keep the partial output transcription but mark it as interrupted
-            if (currentOutputTranscriptionElement) {
-                const textElement = currentOutputTranscriptionElement.querySelector(".bubble-text");
-
-                // Remove typing indicator
-                const typingIndicator = textElement.querySelector(".typing-indicator");
-                if (typingIndicator) {
-                    typingIndicator.remove();
-                }
-
-                // Add interrupted marker
-                currentOutputTranscriptionElement.classList.add("interrupted");
-            }
-
             // Reset state so new content creates a new bubble
             currentMessageId = null;
             currentBubbleElement = null;
-            currentOutputTranscriptionId = null;
-            currentOutputTranscriptionElement = null;
-            inputTranscriptionFinished = false; // Reset for next turn
-            hasOutputTranscriptionInTurn = false; // Reset for next turn
             return;
-        }
-
-        // Handle input transcription (user's spoken words)
-        if (adkEvent.inputTranscription && adkEvent.inputTranscription.text) {
-            const transcriptionText = adkEvent.inputTranscription.text;
-            const isFinished = adkEvent.inputTranscription.finished;
-
-            if (transcriptionText) {
-                // Ignore late-arriving transcriptions after we've finished for this turn
-                if (inputTranscriptionFinished) {
-                    return;
-                }
-
-                if (currentInputTranscriptionId == null) {
-                    // Create new transcription bubble
-                    currentInputTranscriptionId = Math.random().toString(36).substring(7);
-                    // Clean spaces between CJK characters
-                    const cleanedText = cleanCJKSpaces(transcriptionText);
-                    currentInputTranscriptionElement = createMessageBubble(cleanedText, true, !isFinished);
-                    currentInputTranscriptionElement.id = currentInputTranscriptionId;
-
-                    // Add a special class to indicate it's a transcription
-                    currentInputTranscriptionElement.classList.add("transcription");
-
-                    messagesDiv.appendChild(currentInputTranscriptionElement);
-                } else {
-                    // Update existing transcription bubble only if model hasn't started responding
-                    // This prevents late partial transcriptions from overwriting complete ones
-                    if (currentOutputTranscriptionId == null && currentMessageId == null) {
-                        if (isFinished) {
-                            // Final transcription contains the complete text, replace entirely
-                            const cleanedText = cleanCJKSpaces(transcriptionText);
-                            updateMessageBubble(currentInputTranscriptionElement, cleanedText, false);
-                        } else {
-                            // Partial transcription - append to existing text
-                            const existingText = currentInputTranscriptionElement.querySelector(".bubble-text").textContent;
-                            // Remove typing indicator if present
-                            const cleanText = existingText.replace(/\.\.\.$/, '');
-                            // Clean spaces between CJK characters before updating
-                            const accumulatedText = cleanCJKSpaces(cleanText + transcriptionText);
-                            updateMessageBubble(currentInputTranscriptionElement, accumulatedText, true);
-                        }
-                    }
-                }
-
-                // If transcription is finished, reset the state and mark as complete
-                if (isFinished) {
-                    currentInputTranscriptionId = null;
-                    currentInputTranscriptionElement = null;
-                    inputTranscriptionFinished = true; // Prevent duplicate bubbles from late events
-                }
-
-                scrollToBottom();
-            }
-        }
-
-        // Handle output transcription (model's spoken words)
-        if (adkEvent.outputTranscription && adkEvent.outputTranscription.text) {
-            const transcriptionText = adkEvent.outputTranscription.text;
-            const isFinished = adkEvent.outputTranscription.finished;
-            hasOutputTranscriptionInTurn = true;
-
-            if (transcriptionText) {
-                // Finalize any active input transcription when server starts responding
-                if (currentInputTranscriptionId != null && currentOutputTranscriptionId == null) {
-                    // This is the first output transcription - finalize input transcription
-                    const textElement = currentInputTranscriptionElement.querySelector(".bubble-text");
-                    const typingIndicator = textElement.querySelector(".typing-indicator");
-                    if (typingIndicator) {
-                        typingIndicator.remove();
-                    }
-                    // Reset input transcription state so next user input creates new balloon
-                    currentInputTranscriptionId = null;
-                    currentInputTranscriptionElement = null;
-                    inputTranscriptionFinished = true; // Prevent duplicate bubbles from late events
-                }
-
-                if (currentOutputTranscriptionId == null) {
-                    // Create new transcription bubble for agent
-                    currentOutputTranscriptionId = Math.random().toString(36).substring(7);
-                    currentOutputTranscriptionElement = createMessageBubble(transcriptionText, false, !isFinished);
-                    currentOutputTranscriptionElement.id = currentOutputTranscriptionId;
-
-                    // Add a special class to indicate it's a transcription
-                    currentOutputTranscriptionElement.classList.add("transcription");
-
-                    messagesDiv.appendChild(currentOutputTranscriptionElement);
-                } else {
-                    // Update existing transcription bubble
-                    if (isFinished) {
-                        // Final transcription contains the complete text, replace entirely
-                        updateMessageBubble(currentOutputTranscriptionElement, transcriptionText, false);
-                    } else {
-                        // Partial transcription - append to existing text
-                        const existingText = currentOutputTranscriptionElement.querySelector(".bubble-text").textContent;
-                        // Remove typing indicator if present
-                        const cleanText = existingText.replace(/\.\.\.$/, '');
-                        updateMessageBubble(currentOutputTranscriptionElement, cleanText + transcriptionText, true);
-                    }
-                }
-
-                // If transcription is finished, reset the state
-                if (isFinished) {
-                    currentOutputTranscriptionId = null;
-                    currentOutputTranscriptionElement = null;
-                }
-
-                scrollToBottom();
-            }
         }
 
         // Handle content events (text or audio)
         if (adkEvent.content && adkEvent.content.parts) {
             const parts = adkEvent.content.parts;
-
-            // Finalize any active input transcription when server starts responding with content
-            if (currentInputTranscriptionId != null && currentMessageId == null && currentOutputTranscriptionId == null) {
-                // This is the first content event - finalize input transcription
-                const textElement = currentInputTranscriptionElement.querySelector(".bubble-text");
-                const typingIndicator = textElement.querySelector(".typing-indicator");
-                if (typingIndicator) {
-                    typingIndicator.remove();
-                }
-                // Reset input transcription state so next user input creates new balloon
-                currentInputTranscriptionId = null;
-                currentInputTranscriptionElement = null;
-                inputTranscriptionFinished = true; // Prevent duplicate bubbles from late events
-            }
 
             for (const part of parts) {
                 // Handle inline data (audio)
@@ -636,12 +394,6 @@ function connectWebsocket() {
                 if (part.text) {
                     // Skip thinking/reasoning text from chat bubbles (shown in event console)
                     if (part.thought) {
-                        continue;
-                    }
-
-                    // Skip final aggregated content when output transcription already
-                    // delivered the response (prevents duplicate thinking text replay)
-                    if (!adkEvent.partial && hasOutputTranscriptionInTurn) {
                         continue;
                     }
 
@@ -662,6 +414,16 @@ function connectWebsocket() {
                     // Scroll down to the bottom of the messagesDiv
                     scrollToBottom();
                 }
+
+                // Handle Function Calling
+                if (part.functionResponse) {
+                    switch (part.functionResponse.name) {
+                        case "send_navigation_coordinates":
+                            const bound = part.functionResponse.response.bound
+                            highlightElement(bound.xmin, bound.xmax, bound.ymin, bound.ymax);
+                            break;
+                    }
+                }
             }
         }
     };
@@ -679,18 +441,6 @@ function connectWebsocket() {
             reconnecting: true,
             reconnectDelay: '5 seconds'
         }, '🔌', 'system');
-
-        setTimeout(function () {
-            console.log("Reconnecting...");
-
-            // Log reconnection attempt to console
-            addConsoleEntry('outgoing', 'Reconnecting to ADK server...', {
-                userId: userId,
-                sessionId: sessionId
-            }, '🔄', 'system');
-
-            connectWebsocket();
-        }, 5000);
     };
 
     websocket.onerror = function (e) {
@@ -834,3 +584,32 @@ function audioRecorderHandler(pcmData) {
     }
 }
 
+// --------------------------------------------- Actions
+function takeScreenshot() {
+    html2canvas(document.querySelector("#capture")).then(canvas => {
+        // Create a link to download the image
+        const image = canvas.toDataURL("image/jpeg");
+        const base64Data = image.split(',')[1];
+        sendImage(base64Data);
+    });
+}
+
+function highlightElement(xmin, xmax, ymin, ymax) {
+    const canvas = document.getElementById('canvas');
+    console.log(`New: ${xmin} -> ${xmax} & ${ymin} -> ${ymax}`);
+    console.log(canvas.width)
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const ctx = canvas.getContext('2d');
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height); // clear everything
+    ctx.strokeStyle = 'red';
+    ctx.lineWidth = 2;
+    ctx.fillStyle = 'rgba(255, 0, 0, 0.15)';
+    const newXMin =  xmin / 1000 * canvas.width;
+    const newYMin =  ymin / 1000 * canvas.height;
+    const newXMax =  xmax / 1000 * canvas.width;
+    const newYMax =  ymax / 1000 * canvas.height;
+    ctx.fillRect(newXMin, newYMin, newXMax - newXMin, newYMax - newYMin);
+    ctx.strokeRect(newXMin, newYMin, newXMax - newXMin, newYMax - newYMin);
+}
