@@ -21,8 +21,3 @@ npm run build
 ```
 
 > Script to be hosted either via Cloudflare or Firebase CDN.
-
-# Process Followup
-
-- [x] Define screenshot capturer with redaction, to be tightened up better later (for example: user can tag any element
-  with a class name to be redacted, as for now, only password inputs are considered in redaction)

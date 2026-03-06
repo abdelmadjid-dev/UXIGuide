@@ -1,27 +1,14 @@
 # Project Structure Definition
 
-> NOTE: this structure is initial and should change later, it is initiated just to have a ground to work on and get
-> going
+> NOTE: this structure is changing after each sprint of work in case of any changes.
 
 - `Poetry` was used for dependency management and packaging
 - the new project structure (was changed, inspired by bidi-demo) is:
     - within `/app`
         - `main.py` is technically the entry point defining the `WebSocket` for Live API
-        - `agent.py` serves as orchestrator agent using subagents/tools within `/subagents`
-        - `common/` will have other potential needed files
+        - `agent.py` the live agent with `tools` and `SYSTEM_INSTRUCTION` (to be cleaned)
+        - `common/` will have other potentially needed files
             - `api.py` will be used to communicate with Firestore to pull necessary data & configs
             - `errors.py` and `types.py` are common parts
-        - subagents as of now are just placeholders
-
-# Process Followup
-
-- [x] make Live API run locally, a local `index.html` is used to communicate with the backend
-    - NOTE: to run locally for tests, use: `poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000`
-- [x] add subagents/tools to analyze images and define next actions & link them to orchestrator agent
-    - as of now: subagents should be avoided since Live API model can deal with these tasks. Tools require an analysis
-      on whether they are needed or not considering that they are handled automatically by ADK
-- [ ] communicate with orchestrator and its tools/subagents
-    - receive request to get screenshot
-    - send screenshot to be analyzed
-    - receive highlights
-    - all while talking to user realtime
+    - project is packaged with a demo `index.html` providing a mock-script that interacts with the agent. Once this
+      mock-script is complete, the components are to be moved into the actual script.
