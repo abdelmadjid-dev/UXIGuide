@@ -1,5 +1,6 @@
 import {Config} from "./types/config.types";
 import {captureSafeScreenshot} from "./core/capturer.ts";
+import {generateUIMap, testHighlightElement} from "./core/mapper.ts";
 
 class UXIGuideScript {
     private readonly apiKey: string;
@@ -39,7 +40,11 @@ class UXIGuideScript {
     }
 
     async takeScreenshot(): Promise<string> {
-        return await captureSafeScreenshot()
+        const map = generateUIMap();
+        map.forEach((item) => {
+            testHighlightElement(item.rect.x, item.rect.x + item.rect.w, item.rect.y, item.rect.y + item.rect.h);
+        });
+        return await captureSafeScreenshot();
     }
 }
 
