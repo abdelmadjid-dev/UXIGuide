@@ -1,11 +1,14 @@
 import {Config} from "./types/config.types";
-import {UIManager} from "./ui/consent.ts";
+import {InterfaceManager} from "./ui/consent.ts";
+import {connectWebsocket, sendImage, sendMessage, startAudio, stopAudio} from "./core/socket.ts";
+import {generateUIMap, testHighlightElement} from "./core/mapper.ts";
+import {captureSafeScreenshot} from "./core/capturer.ts";
 
 class UXIGuideScript {
     private readonly apiKey: string;
     private config: Config;
     private isInitialized: boolean = false;
-    private ui: UIManager;
+    private interfaceManager: InterfaceManager | null = null;
 
     constructor(config: Config) {
         if (!config.apiKey) {
@@ -15,8 +18,7 @@ class UXIGuideScript {
 
         this.apiKey = config.apiKey;
         this.config = {
-            serverUrl: 'wss://api.uxiguide.com/ws', // TODO: change endpoint
-            debug: false,
+            debug: true,
             ...config
         };
 
@@ -26,14 +28,42 @@ class UXIGuideScript {
     private init(): void {
         if (this.isInitialized) return;
 
-        if (this.config.debug) {
-            console.log(`UXIGuideScript Initializing with key: ${this.apiKey}`);
-        }
+        if (this.config.debug) console.log(`UXIGuideScript Initializing with key: ${this.apiKey}`);
 
-        // Initialize UI (FAB and Consent)
-        this.ui = new UIManager(() => {
+        // Initialize
+        this.interfaceManager = new InterfaceManager(() => {
             if (this.config.debug) console.log('UXIGuide: Consent Approved');
+            // Start Communication
+            connectWebsocket(
+                // Opened Connection...
+                () => {
+                    if (this.config.debug) console.log('Connection with Websocket opened');
+                    startAudio();
+                    // TODO: highlight border + show icon
+                },
+                async (name: string, response: any) => {
+                    switch (name) {
+                        case "request_screenshot":
+                            sendImage(await captureSafeScreenshot());
+                            sendMessage(JSON.stringify(generateUIMap()));
+                            break;
+                        case "send_navigation_coordinates":
+                            const bound = response.bound
+                            testHighlightElement(bound.xmin, bound.xmax, bound.ymin, bound.ymax, false);
+                            break;
+                    }
+                },
+                // Closed Connection...
+                () => {
+                    if (this.config.debug) console.log('Connection with Websocket opened');
+                    stopAudio();
+                },
+                () => {
+
+                }
+            )
         });
+        this.interfaceManager.callAction();
 
         this.isInitialized = true;
     }
