@@ -1,14 +1,16 @@
 import {Config} from "./types/config.types";
-import {InterfaceManager} from "./ui/consent.ts";
+import {UXIGuideUI} from "./ui/UXIGuideUI.ts";
 import {connectWebsocket, sendImage, sendMessage, startAudio, stopAudio} from "./core/socket.ts";
 import {generateUIMap, testHighlightElement} from "./core/mapper.ts";
 import {captureSafeScreenshot} from "./core/capturer.ts";
+
+import './ui/styles.css';
 
 class UXIGuideScript {
     private readonly apiKey: string;
     private config: Config;
     private isInitialized: boolean = false;
-    private interfaceManager: InterfaceManager | null = null;
+    private ui: UXIGuideUI | null = null;
 
     constructor(config: Config) {
         if (!config.apiKey) {
@@ -31,7 +33,7 @@ class UXIGuideScript {
         if (this.config.debug) console.log(`UXIGuideScript Initializing with key: ${this.apiKey}`);
 
         // Initialize
-        this.interfaceManager = new InterfaceManager(() => {
+        this.ui = new UXIGuideUI(() => {
             if (this.config.debug) console.log('UXIGuide: Consent Approved');
             // Start Communication
             connectWebsocket(
@@ -63,7 +65,7 @@ class UXIGuideScript {
                 }
             )
         });
-        this.interfaceManager.callAction();
+        this.ui.callAction();
 
         this.isInitialized = true;
     }
