@@ -1,4 +1,4 @@
-export class UIManager {
+export class InterfaceManager {
     private fab: HTMLButtonElement | null = null;
     private dialog: HTMLDivElement | null = null;
     private onApprove: () => void;
@@ -80,6 +80,7 @@ export class UIManager {
                 this.showConsentDialog();
             } else {
                 console.log('UXIGuide: Assistant active');
+                this.onApprove();
             }
         };
         document.body.appendChild(this.fab);
@@ -131,5 +132,9 @@ export class UIManager {
             this.dialog?.remove();
             this.dialog = null;
         });
+    }
+
+    callAction() {
+        console.log("Action on Interface")
     }
 }
