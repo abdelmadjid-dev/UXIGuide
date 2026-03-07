@@ -1,20 +1,59 @@
-import html2canvas from "html2canvas";
+import {domToJpeg} from 'modern-screenshot';
+
+function removeOverflows(root: HTMLElement): () => void {
+    const affected: Array<{ el: HTMLElement; overflow: string; overflowY: string; overflowX: string }> = [];
+
+    root.querySelectorAll<HTMLElement>('*').forEach(el => {
+        const computed = window.getComputedStyle(el);
+        const hasOverflow = ['auto', 'scroll', 'hidden'].some(v =>
+            computed.overflow === v || computed.overflowY === v || computed.overflowX === v
+        );
+
+        if (hasOverflow) {
+            affected.push({
+                el,
+                overflow: el.style.overflow,
+                overflowY: el.style.overflowY,
+                overflowX: el.style.overflowX,
+            });
+            el.style.overflow = 'visible';
+            el.style.overflowY = 'visible';
+            el.style.overflowX = 'visible';
+        }
+    });
+
+    return () => affected.forEach(({el, overflow, overflowY, overflowX}) => {
+        el.style.overflow = overflow;
+        el.style.overflowY = overflowY;
+        el.style.overflowX = overflowX;
+    });
+}
 
 export async function captureSafeScreenshot(rootElement = document.body) {
     try {
-        const canvas = await html2canvas(rootElement, {
-            useCORS: true, // allows images from other domains to be drawn
-            allowTaint: false, // prevents the canvas from being "polluted" by cross-origin data
-            logging: false, // Keep the console clean for the user
+        const restoreOverflows = removeOverflows(rootElement);
+        const canvas = await domToJpeg(rootElement, {
+            quality: 0.8,
+            timeout: 5000, // Wait up to 5s for external assets to load
             backgroundColor: null, // Keep transparency if needed
-            imageTimeout: 5000, // Wait up to 5s for external assets to load
-            onclone: (clonedDoc) => {
-                // TODO: add other specific selectors like customized ones (e.g. [data-uxiguide-ignore], .px-private)
+            scale: window.devicePixelRatio,
+            width: rootElement.scrollWidth,
+            height: rootElement.scrollHeight,
+            onCloneNode: (clonedDoc: any) => {
                 // Find sensitive elements in the CLONED document
-                const sensitiveSelectors = 'input[type="password"], .px-private';
+                const sensitiveSelectors = [
+                    'input[type="password"]',
+                    'input[name*="cvv"]',
+                    'input[name*="cardnumber"]',
+                    '[data-uxiguide-ignore]',
+                    '.uxiguide-ignore',
+                    'iframe',
+                    '.cookie-banner',
+                    '#intercom-container'
+                ].join(', ');
                 const elementsToRedact = clonedDoc.querySelectorAll(sensitiveSelectors);
 
-                elementsToRedact.forEach(el => {
+                elementsToRedact.forEach((el: any) => {
                     const htmlEl = el as HTMLElement
                     // apply the "Black Bar" style
                     htmlEl.style.backgroundColor = 'black';
@@ -34,9 +73,8 @@ export async function captureSafeScreenshot(rootElement = document.body) {
                 });
             }
         });
-
-        // Convert to base64 for Gemini 3 "Brain" Agent (0.8 to save bandwidth)
-        return canvas.toDataURL('image/jpeg', 0.8);
+        restoreOverflows();
+        return canvas;
     } catch (error) {
         console.error("UXIGuide Capture Error:", error);
         throw error;
