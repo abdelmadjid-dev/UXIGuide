@@ -12,6 +12,15 @@ export function generateUIMap(rootElement = document.body) {
 
     return Array.from(elements).map((el, index) => {
         const rect = el.getBoundingClientRect();
+        const style = window.getComputedStyle(el);
+
+        const isZeroSize = rect.width === 0 || rect.height === 0;
+        const isHiddenCSS = style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0';
+        const isOffScreen = rect.bottom < 0 || rect.top > vHeight || rect.right < 0 || rect.left > vWidth;
+
+        if (isZeroSize || isHiddenCSS) {
+            return null; // Skip this element
+        }
 
         if (!el.id) {
             el.id = `uxi-${index}`;
@@ -28,7 +37,8 @@ export function generateUIMap(rootElement = document.body) {
                 y: Math.round((rect.top / vHeight) * 1000),
                 w: Math.round((rect.width / vWidth) * 1000),
                 h: Math.round((rect.height / vHeight) * 1000)
-            }
+            },
+            isVisible: !isOffScreen // Let the AI know if it needs to tell the user to scroll
         };
     }).filter(Boolean); // Remove nulls
 }
