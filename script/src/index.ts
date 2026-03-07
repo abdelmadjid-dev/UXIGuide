@@ -1,11 +1,11 @@
 import {Config} from "./types/config.types";
-import {captureSafeScreenshot} from "./core/capturer.ts";
-import {generateUIMap, testHighlightElement} from "./core/mapper.ts";
+import {UIManager} from "./ui/consent.ts";
 
 class UXIGuideScript {
     private readonly apiKey: string;
     private config: Config;
     private isInitialized: boolean = false;
+    private ui: UIManager;
 
     constructor(config: Config) {
         if (!config.apiKey) {
@@ -30,26 +30,16 @@ class UXIGuideScript {
             console.log(`UXIGuideScript Initializing with key: ${this.apiKey}`);
         }
 
-        // Initialize WebSocket connection
-        // this.socket = new SocketManager(this.config.serverUrl);
-
-        // Setup UI elements (Highlighter/Screenshot buttons)
-        // this.ui = new VisualHighlighter();
+        // Initialize UI (FAB and Consent)
+        this.ui = new UIManager(() => {
+            if (this.config.debug) console.log('UXIGuide: Consent Approved');
+        });
 
         this.isInitialized = true;
-    }
-
-    async takeScreenshot(): Promise<string> {
-        const map = generateUIMap();
-        map.forEach((item) => {
-            testHighlightElement(item.rect.x, item.rect.x + item.rect.w, item.rect.y, item.rect.y + item.rect.h);
-        });
-        return await captureSafeScreenshot();
     }
 }
 
 // Attach to window for CDN usage
-// This allows: new window.UXIGuide.Loader({ apiKey: 'abc-123' })
 (window as any).UXIGuide = {
     Loader: UXIGuideScript
 };
