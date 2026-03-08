@@ -1,60 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>UXIGuide - Screenshot Test Bench</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      padding: 20px;
-      background: #f4f7f6;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UXIGuide - Demo Website</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background: #f4f7f6;
+        }
 
-    .container {
-      display: flex;
-      gap: 20px;
-    }
+        .container {
+            display: flex;
+            gap: 20px;
+        }
 
-    .mock-site {
-      flex: 1;
-      border: 2px solid #333;
-      padding: 20px;
-      background: white;
-      border-radius: 8px;
-    }
+        .mock-site {
+            flex: 1;
+            border: 2px solid #333;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+        }
 
-    .preview-area {
-      flex: 1;
-      border: 2px dashed #999;
-      padding: 20px;
-      background: #eee;
-      min-height: 400px;
-    }
+        .preview-area {
+            flex: 1;
+            border: 2px dashed #999;
+            padding: 20px;
+            background: #eee;
+            min-height: 400px;
+        }
 
-    input {
-      display: block;
-      margin: 10px 0;
-      padding: 8px;
-      width: 100%;
-    }
+        input {
+            display: block;
+            margin: 10px 0;
+            padding: 8px;
+            width: 100%;
+        }
 
-    button {
-      padding: 10px 20px;
-      cursor: pointer;
-      background: #007bff;
-      color: white;
-      border: none;
-      border-radius: 4px;
-    }
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
 
-    img {
-      max-width: 100%;
-      height: auto;
-      margin-top: 10px;
-      border: 1px solid #ddd;
-    }
-  </style>
+        img {
+            max-width: 100%;
+            height: auto;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+        }
+    </style>
 </head>
 <body>
 <canvas id="canvas" style="position:fixed; top:0; left:0; pointer-events:none;"></canvas>
@@ -63,49 +63,45 @@
 <p>Use this to verify <b>Redaction</b> and <b>CORS Image Capture</b>.</p>
 
 <div class="container">
-  <div id="capture-root" class="mock-site">
-    <h2>Demo Website Instance</h2>
+    <div id="capture-root" class="mock-site">
+        <h2>Demo Website Instance</h2>
 
-    <label>Public Username:</label>
-    <input type="text" value="GuestUser123">
+        <label>Public Username:</label>
+        <input aria-label="username" type="text" value="GuestUser123">
 
-    <label>Sensitive Password (Should be Redacted):</label>
-    <input type="password" value="SuperSecret123">
+        <label>Sensitive Password (Should be Redacted):</label>
+        <input aria-label="password" type="password" value="SuperSecret123">
 
-    <label>Private API Key (Class-based Redaction):</label>
-    <p class=".uxiguide-ignore">sk_live_51Mkhf... (REDACT ME)</p>
+        <label>Private API Key (Class-based Redaction):</label>
+        <p class=".uxiguide-ignore">sk_live_51Mkhf... (REDACT ME)</p>
 
-    <label>CORS Image (External Source):</label><br>
-    <img src="https://picsum.photos/400/200" crossorigin="anonymous" alt="Test Image">
+        <label>CORS Image (External Source):</label><br>
+        <img src="https://picsum.photos/400/200" crossorigin="anonymous" alt="Test Image">
 
-    <div style="margin-top:20px;">
-      <button id="btn-capture">Take Safe Screenshot</button>
+        <div style="margin-top:20px;">
+            <button id="btn-capture">Next Up</button>
+        </div>
     </div>
-  </div>
 
-  <div class="preview-area">
-    <h3>AI Vision Preview</h3>
-    <p style="font-size: 12px; color: #666;">This is what is sent to Gemini 3:</p>
-    <div id="screenshot-results"></div>
-  </div>
+    <div class="preview-area">
+        <h3>AI Vision Preview</h3>
+        <p style="font-size: 12px; color: #666;">This is what is sent to Gemini 3:</p>
+        <div id="screenshot-results"></div>
+    </div>
 </div>
 
 <script src="../dist/uxiguide.js"></script>
 <script>
-  const uxiGuide = new UXIGuide.Loader({
-    apiKey: 'your-public-api-key-here',
-    debug: true
-  });
+    const uxiGuide = new UXIGuide.Loader({
+        apiKey: 'your-public-api-key-here',
+        debug: true
+    });
+    let step = 0;
 
-  document.getElementById('btn-capture').addEventListener('click', async () => {
-    const resultDiv = document.getElementById('screenshot-results');
-
-    // Clear previous results
-    resultDiv.innerHTML = "Processing...";
-
-    const base64Image = await uxiGuide.takeScreenshot()
-    resultDiv.innerHTML = `<img src="${base64Image}" style="width:100%; border: 2px solid #000;">`;
-  });
+    document.getElementById('btn-capture').addEventListener('click', async () => {
+        step = step + 1;
+        uxiGuide.nextStep(step);
+    });
 </script>
 
 </body>

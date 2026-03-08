@@ -1,6 +1,6 @@
 export function generateUIMap(rootElement = document.body) {
     const interactiveSelectors = [
-        'button', 'a', 'input', 'select', 'textarea', 'label',
+        'button', 'a', 'input', 'select', 'textarea', // TODO: add label with a twist
         '[role="button"]', '[role="link"]', '[role="menuitem"]', '[role="tab"]', // ARIA
         '[onclick]', // Legacy JS clicks
         '.btn', '.button', '.clickable' // Common CSS utility classes (optional but helpful)
