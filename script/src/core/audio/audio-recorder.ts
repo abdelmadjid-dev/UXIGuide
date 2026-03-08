@@ -1,6 +1,6 @@
 let micStream;
 
-export async function startAudioRecorderWorklet(audioRecorderHandler: (pcmData: ArrayBufferLike) => void) {
+export async function startAudioRecorderWorklet(audioRecorderHandler: (pcmData: ArrayBuffer) => void) {
   // Create an AudioContext
   const audioRecorderContext = new AudioContext({ sampleRate: 16000 });
   console.log("AudioContext sample rate:", audioRecorderContext.sampleRate);
@@ -25,7 +25,7 @@ export async function startAudioRecorderWorklet(audioRecorderHandler: (pcmData: 
   source.connect(audioRecorderNode);
   audioRecorderNode.port.onmessage = (event) => {
     // Convert to 16-bit PCM
-    const pcmData: ArrayBufferLike = convertFloat32ToPCM(event.data);
+    const pcmData = convertFloat32ToPCM(event.data);
 
     // Send the PCM data to the handler.
     audioRecorderHandler(pcmData);
@@ -42,7 +42,7 @@ export function stopMicrophone(micStream: MediaStream) {
 }
 
 // Convert Float32 samples to 16-bit PCM.
-function convertFloat32ToPCM(inputData: Float32Array): ArrayBufferLike {
+function convertFloat32ToPCM(inputData: Float32Array): ArrayBuffer {
   // Create an Int16Array of the same length.
   const pcm16 = new Int16Array(inputData.length);
   for (let i = 0; i < inputData.length; i++) {

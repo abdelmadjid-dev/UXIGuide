@@ -35,39 +35,56 @@ class UXIGuideScript {
         // Initialize
         this.ui = new UXIGuideUI(() => {
             if (this.config.debug) console.log('UXIGuide: Consent Approved');
-            // Start Communication
-            connectWebsocket(
-                // Opened Connection...
-                () => {
-                    if (this.config.debug) console.log('Connection with Websocket opened');
-                    startAudio();
-                    // TODO: highlight border + show icon
-                },
-                async (name: string, response: any) => {
-                    switch (name) {
-                        case "request_screenshot":
-                            sendImage(await captureSafeScreenshot());
-                            sendMessage(JSON.stringify(generateUIMap()));
-                            break;
-                        case "send_navigation_coordinates":
-                            const bound = response.bound
-                            testHighlightElement(bound.xmin, bound.xmax, bound.ymin, bound.ymax, false);
-                            break;
-                    }
-                },
-                // Closed Connection...
-                () => {
-                    if (this.config.debug) console.log('Connection with Websocket opened');
-                    stopAudio();
-                },
-                () => {
-
-                }
-            )
+            startAudio();
+            sendMessage("Hey!");
+            this.ui!.callAction();
+            // TODO: highlight border + show icon
         });
-        this.ui.callAction();
+
+        // Initialize Websocket
+        connectWebsocket(
+            async (name: string, response: any) => {
+                switch (name) {
+                    case "request_screenshot":
+                        const map = JSON.stringify(generateUIMap());
+                        sendMessage(map);
+                        const screenshot = await captureSafeScreenshot();
+                        sendImage(screenshot.split(',')[1]);
+                        break;
+                    case "dispatch_next_action":
+                        const bound = response.bound
+                        console.log(response);
+                        testHighlightElement(bound.xmin, bound.xmax, bound.ymin, bound.ymax, false);
+                        break;
+                }
+            },
+            // Closed Connection...
+            () => {
+                if (this.config.debug) console.log('Connection with Websocket opened');
+                stopAudio();
+            },
+            // On Error
+            () => {}
+        )
 
         this.isInitialized = true;
+    }
+
+    nextStep(step: number): void {
+        switch (step) {
+            case 1:
+                sendMessage("I want to fill in the form");
+                break;
+            case 2:
+                sendMessage("Done, What's next");
+                break;
+            case 3:
+                sendMessage("Done, What's next");
+                break;
+            case 4:
+                sendMessage("Done, What's next");
+                break;
+        }
     }
 }
 

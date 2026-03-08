@@ -1,41 +1,58 @@
 import os
 
 from google.adk.agents.llm_agent import Agent
-from google.adk.tools.function_tool import FunctionTool
 
 # The System Prompt for UXIGuide
 SYSTEM_INSTRUCTION = """
-You are UXIGuide, a live AI co-pilot for web navigation. You see what the user sees via a proactive screenshot stream.
+You are UXIGuide, a supportive, multi-modal AI Web Assistant.
 
-### DETECTION & COORDINATE PROTOCOL:
-- When identifying UI elements, use the format [ymin, xmin, ymax, xmax].
-- All coordinates MUST be normalized to a scale of 0-1000 based on the image dimensions.
-- Detect the prominent items in the image that are relevant to the user's request.
+- [WHEN USER SAYS "Hi"]: Introduce yourself and ask how can you help the user.
+- [WHEN USER ASKS EXPLICITLY ABOUT SOMETHING TO DO ON THE WEBSITE]: Immediately call the tool `request_screenshot`. DO 
+NOT answer the user until the image and additional context is received.
+- [WHEN IMAGE IS RECEIVED]: Analyze the screenshot then Immediately call the tool `dispatch_next_action`. The action 
+should be simple and describes only the next step.
+- [WHEN THE USER SAYS "Done, What's next"]: Call the tool `dispatch_next_tool` again with the following action.
+- Repeat the process until the user achieves his goal.
+- [ONCE THE USER SAYS "Done, What's next" ON THE LAST ACTION]: Inform the user that he should have achieved his request.
 
-### OPERATIONAL RULES:
-1. **SYNCED GUIDANCE:** Every time you give a verbal instruction (e.g., "Click on the login button"), you MUST simultaneously call `send_navigation_coordinates` with the normalized box_2d.
-2. **PROACTIVE SIGHT:** You receive screenshots automatically. Always use the most recent image to determine coordinates.
-3. **FLOW CONTROL:** - Set `is_final_action=False` if the user needs to perform more steps after this click.
-   - Set `is_final_action=True` only when the task is fully resolved.
-4. **NO HALLUCINATION:** If an element is not visible in the current screenshot, do not guess coordinates. Instead, ask the user to scroll or navigate, then wait for the next automatic screenshot refresh.
-
-### TONE:
-Helpful, immediate, and concise. Speak to the user naturally while the system handles the highlighting.
+RULES
+    - After calling the tool `dispatch_next_tool`, always explain to the user the action.
 """
 
 
-def send_navigation_coordinates(xmin: int, xmax: int, ymin: int, ymax: int, is_final_action: bool):
+def request_screenshot():
     """
-        Highlights a specific UI element. Coordinates must be normalized to 0-1000.
+    Triggers the frontend to capture a full-page screenshot and
+    extract the DOM element mapping. Use this whenever you need
+    to see the current state of the page.
+    """
+    return {"status": "sent"}
 
-        Args:
-            ymin: Top edge (0-1000)
-            xmin: Left edge (0-1000)
-            ymax: Bottom edge (0-1000)
-            xmax: Right edge (0-1000)
-            is_final_action: True if this completes the user's request.
+
+def show_error(message: str):
     """
-    return {"status": "coordinates_sent", "bound": {"xmin": xmin, "xmax": xmax, "ymin": ymin, "ymax": ymax},
+    Displays an error message to the user when a task is impossible
+    on the current page or if the user's request is ambiguous.
+
+    Args:
+        message: A clear explanation of why the action cannot be completed.
+    """
+    return {message: message}
+
+
+def dispatch_next_action(id: str, xmin: int, xmax: int, ymin: int, ymax: int, is_final_action: bool):
+    """
+    Sends the next that the user has to do
+
+    Args:
+        id: id of the element
+        ymin: Top edge (0-1000)
+        xmin: Left edge (0-1000)
+        ymax: Bottom edge (0-1000)
+        xmax: Right edge (0-1000)
+        is_final_action: True if this completes the user's request.
+    """
+    return {"status": "coordinates_sent", "id": id, "bound": {"xmin": xmin, "xmax": xmax, "ymin": ymin, "ymax": ymax},
             "is_final_action": is_final_action}
 
 
@@ -43,5 +60,5 @@ agent = Agent(
     name="uxiguide_agent",
     model=os.getenv("LIVE_AGENT_MODEL", "gemini-2.5-flash-native-audio-preview-09-2025"),
     instruction=SYSTEM_INSTRUCTION,
-    tools=[FunctionTool(send_navigation_coordinates)]
+    tools=[request_screenshot, dispatch_next_action]
 )

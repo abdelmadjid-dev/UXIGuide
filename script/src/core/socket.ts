@@ -12,7 +12,6 @@ function getWebSocketUrl(userId: string, sessionId: string) {
 }
 
 export function connectWebsocket(
-    onOpen: () => void,
     onFunctionCalled: (name: string, response: any) => void,
     onclose: () => void,
     onError: (event: Event) => void,
@@ -23,7 +22,7 @@ export function connectWebsocket(
     const ws_url = getWebSocketUrl(userId, sessionId);
     websocket = new WebSocket(ws_url);
 
-    websocket.onopen = onOpen;
+    //websocket.onopen = onOpen;
     websocket.onmessage = function (event) {
         // Parse the incoming ADK Event
         const adkEvent = JSON.parse(event.data);
@@ -66,6 +65,7 @@ export function connectWebsocket(
 
 export function sendMessage(message: string) {
     if (websocket && websocket.readyState === WebSocket.OPEN) {
+        console.log(`Sending Text Message: ${message.substring(0, 30)}`);
         const jsonMessage = JSON.stringify({
             type: "text",
             text: message
@@ -88,10 +88,6 @@ export function sendImage(base64Image: string) {
 // --------------------------------------------- Handle Audio
 let audioPlayerNode: AudioWorkletNode;
 let micStream: MediaStream;
-/*let audioPlayerContext: AudioContext;
-let audioRecorderNode: AudioWorkletNode;
-let audioRecorderContext: AudioContext;
-*/
 
 // Import the audio worklets
 import {startAudioPlayerWorklet} from "./audio/audio-player.ts";
@@ -101,13 +97,10 @@ export function startAudio() {
     // Start audio output
     startAudioPlayerWorklet().then((res) => {
         audioPlayerNode = res.node;
-        //audioPlayerContext = res.ctx;
     });
 
     // Start audio input
     startAudioRecorderWorklet(audioRecorderHandler).then((res) => {
-            //audioRecorderNode = res.node;
-            //audioRecorderContext = res.ctx;
             micStream = res.stream;
         }
     );
@@ -117,7 +110,7 @@ export function stopAudio() {
     stopMicrophone(micStream);
 }
 
-function audioRecorderHandler(pcmData: ArrayBufferLike) {
+function audioRecorderHandler(pcmData: ArrayBuffer) {
     if (websocket && websocket.readyState === WebSocket.OPEN) {
         // Send audio as binary WebSocket frame (more efficient than base64 JSON)
         websocket.send(pcmData);
