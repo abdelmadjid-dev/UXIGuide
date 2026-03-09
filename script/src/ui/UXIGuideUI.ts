@@ -229,6 +229,26 @@ export class UXIGuideUI {
         };
     }
 
+    listenToElement(id: string, callback: () => void) {
+        const element = document.getElementById(id);
+        if (element) {
+            const listener = (_: PointerEvent) => {
+                callback();
+                element.removeEventListener("click", listener);
+                document.getElementById("uxiguide-next-button")?.remove();
+            }
+
+            if (element?.tagName !== "INPUT") element.addEventListener("click", listener);
+            else {
+                const doneBtn = document.createElement('button');
+                doneBtn.id = "uxiguide-next-button";
+                doneBtn.innerHTML = 'DONE!'; // Or use an icon/text
+                element.insertAdjacentElement("afterend", doneBtn);
+                doneBtn.addEventListener('click', listener);
+            }
+        }
+    }
+
     private stopHighlightAnimation() {
         (window as any).__stopHighlight?.();
     }
