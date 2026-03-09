@@ -47,12 +47,14 @@ class UXIGuideScript {
                     case "request_screenshot":
                         const map = JSON.stringify(generateUIMap());
                         sendMessage(map);
+                        this.ui?.showScreenshotToast();
                         const screenshot = await captureSafeScreenshot();
                         sendImage(screenshot.split(',')[1]);
                         break;
                     case "dispatch_next_action":
                         const bound = response.bound
                         this.ui?.highlightElement(bound.xmin, bound.xmax, bound.ymin, bound.ymax);
+                        this.ui?.listenToElement(response.id, () => sendMessage("Done, What's next"));
                         break;
                 }
             },
