@@ -1,5 +1,5 @@
 /* Floating Action Button */
-.uxig-fab {
+.uxiguide-fab {
     position: fixed;
     bottom: 32px;
     right: 32px;
@@ -10,7 +10,7 @@
     border-radius: 50%;
     border: none;
     cursor: pointer;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
     z-index: 9999;
     display: flex;
     align-items: center;
@@ -18,14 +18,42 @@
     transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.uxig-fab:hover { transform: scale(1.1); }
-.uxig-fab svg { width: 24px; height: 24px; }
+.uxiguide-fab:hover {
+    transform: scale(1.1);
+}
+
+.uxiguide-fab svg {
+    width: 24px;
+    height: 24px;
+}
+
+.uxiguide-fab.is-recording {
+    background: #ff4444; /* Red color */
+    animation: pulse-red 1.5s infinite;
+}
+
+@keyframes pulse-red {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7);
+    }
+
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 15px rgba(255, 68, 68, 0);
+    }
+
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(255, 68, 68, 0);
+    }
+}
 
 /* Consent Dialog & Overlay */
-.uxig-overlay {
+.uxiguide-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.4);
+    background: rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
@@ -34,41 +62,169 @@
     padding: 20px;
 }
 
-.uxig-modal {
+.uxiguide-modal {
     background: white;
     border-radius: 24px;
     padding: 32px;
     max-width: 400px;
     width: 100%;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-.uxig-modal h2 { margin: 0 0 16px; font-size: 20px; color: #141414; }
-.uxig-modal p { margin: 0 0 24px; font-size: 14px; color: #666; line-height: 1.5; }
+.uxiguide-modal h2 {
+    margin: 0 0 16px;
+    font-size: 20px;
+    color: #141414;
+}
+
+.uxiguide-modal p {
+    margin: 0 0 24px;
+    font-size: 14px;
+    color: #666;
+    line-height: 1.5;
+}
 
 /* Permission Items */
-.uxig-feature-row { display: flex; gap: 16px; margin-bottom: 24px; }
-.uxig-icon-wrapper {
-    width: 40px; height: 40px;
+.uxiguide-feature-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.uxiguide-icon-wrapper {
+    width: 40px;
+    height: 40px;
     background: #f5f5f5;
     border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
 }
 
-.uxig-feature-text h3 { margin: 0 0 4px; font-size: 14px; color: #141414; }
-.uxig-feature-text p { margin: 0; font-size: 12px; color: #888; }
+.uxiguide-feature-text h3 {
+    margin: 0 0 4px;
+    font-size: 14px;
+    color: #141414;
+}
+
+.uxiguide-feature-text p {
+    margin: 0;
+    font-size: 12px;
+    color: #888;
+}
 
 /* Buttons */
-.uxig-button-group { display: flex; gap: 12px; }
-.uxig-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; font-size: 14px; transition: opacity 0.2s; }
-.uxig-btn:active { opacity: 0.8; }
-.uxig-btn-secondary { background: #f5f5f5; color: #666; }
-.uxig-btn-primary { background: #141414; color: white; }
+.uxiguide-button-group {
+    display: flex;
+    gap: 12px;
+}
 
-/* Utility for future features */
-.uxig-highlight-element {
-    outline: 3px solid #141414;
-    transition: outline 0.3s ease;
+.uxiguide-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 14px;
+    transition: opacity 0.2s;
+}
+
+.uxiguide-btn:active {
+    opacity: 0.8;
+}
+
+.uxiguide-btn-secondary {
+    background: #f5f5f5;
+    color: #666;
+}
+
+.uxiguide-btn-primary {
+    background: #141414;
+    color: white;
+}
+
+/* Toast Container */
+#uxiguide-toast-container {
+    position: fixed;
+    bottom: 32px; /* Align with your FAB height */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10001; /* Above the modal */
+    pointer-events: none;
+}
+
+/* Toast Styling */
+.uxiguide-toast {
+    background: rgba(20, 20, 20, 0.95); /* Your #141414 with slight transparency */
+    color: white;
+    padding: 14px 28px;
+    border-radius: 16px; /* Matching the softened corners of your UI */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(8px);
+
+    /* Animation States */
+    opacity: 0;
+    transform: translateY(20px);
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+    opacity 0.3s ease;
+}
+
+/* Entrance Trigger */
+.uxiguide-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* --------------------------------------------------- */
+.uxiguide-overlay-border {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999999;
+    pointer-events: none;
+    overflow: hidden;
+    /* Ensures the pseudo-element stays within the box */
+}
+
+.uxiguide-overlay-border::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(var(--a), #BADC9D, #9DD1C8, #BADC9D, #9DD1C8, #BADC9D);
+    filter: blur(48px);
+    /* Creates the soft shadow effect */
+    z-index: 9999999;
+    mask: linear-gradient(to top, transparent, black) top / 100% 6%,
+    linear-gradient(to bottom, transparent, black) bottom / 100% 6%,
+    linear-gradient(to left, transparent, black) left / 3% 100%,
+    linear-gradient(to right, transparent, black) right / 3% 100%;
+    mask-repeat: no-repeat;
+    animation: moveGradient 5s infinite alternate;
+}
+
+@property --a {
+    syntax: '<angle>';
+    inherits: false;
+    initial-value: 0deg;
+}
+
+@keyframes moveGradient {
+    0% {
+        --a: 0deg;
+    }
+
+    100% {
+        --a: 360deg;
+    }
 }

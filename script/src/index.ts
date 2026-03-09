@@ -1,7 +1,7 @@
 import {Config} from "./types/config.types";
 import {UXIGuideUI} from "./ui/UXIGuideUI.ts";
 import {connectWebsocket, sendImage, sendMessage, startAudio, stopAudio} from "./core/socket.ts";
-import {generateUIMap, testHighlightElement} from "./core/mapper.ts";
+import {generateUIMap} from "./core/mapper.ts";
 import {captureSafeScreenshot} from "./core/capturer.ts";
 
 import './ui/styles.css';
@@ -37,8 +37,7 @@ class UXIGuideScript {
             if (this.config.debug) console.log('UXIGuide: Consent Approved');
             startAudio();
             sendMessage("Hey!");
-            this.ui!.callAction();
-            // TODO: highlight border + show icon
+            this.ui?.startAnimation();
         });
 
         // Initialize Websocket
@@ -53,8 +52,7 @@ class UXIGuideScript {
                         break;
                     case "dispatch_next_action":
                         const bound = response.bound
-                        console.log(response);
-                        testHighlightElement(bound.xmin, bound.xmax, bound.ymin, bound.ymax, false);
+                        this.ui?.highlightElement(bound.xmin, bound.xmax, bound.ymin, bound.ymax);
                         break;
                 }
             },
@@ -62,6 +60,7 @@ class UXIGuideScript {
             () => {
                 if (this.config.debug) console.log('Connection with Websocket opened');
                 stopAudio();
+                this.ui?.stopAnimation();
             },
             // On Error
             () => {}
