@@ -36,7 +36,7 @@ class UXIGuideScript {
         this.ui = new UXIGuideUI(() => {
             if (this.config.debug) console.log('UXIGuide: Consent Approved');
             startAudio();
-            sendMessage("Hey!");
+            sendMessage("COMMAND::Hi");
             this.ui?.startAnimation();
         });
 
@@ -46,15 +46,16 @@ class UXIGuideScript {
                 switch (name) {
                     case "request_screenshot":
                         const map = JSON.stringify(generateUIMap());
-                        sendMessage(map);
+                        sendMessage(`dom map: ${map}`);
                         this.ui?.showScreenshotToast();
                         const screenshot = await captureSafeScreenshot();
                         sendImage(screenshot.split(',')[1]);
+                        sendMessage("COMMAND::image_sent");
                         break;
                     case "dispatch_next_action":
                         const bound = response.bound
                         this.ui?.highlightElement(bound.xmin, bound.xmax, bound.ymin, bound.ymax);
-                        this.ui?.listenToElement(response.id, () => sendMessage("Done, What's next"));
+                        this.ui?.listenToElement(response.id, () => sendMessage("COMMAND::next"));
                         break;
                 }
             },
@@ -69,23 +70,6 @@ class UXIGuideScript {
         )
 
         this.isInitialized = true;
-    }
-
-    nextStep(step: number): void {
-        switch (step) {
-            case 1:
-                sendMessage("I want to fill in the form");
-                break;
-            case 2:
-                sendMessage("Done, What's next");
-                break;
-            case 3:
-                sendMessage("Done, What's next");
-                break;
-            case 4:
-                sendMessage("Done, What's next");
-                break;
-        }
     }
 }
 
