@@ -3,7 +3,7 @@
  */
 
 // Connect the server with a WebSocket connection
-const userId = "demo-user";
+const userId = "demo-user-" + Math.random().toString(36).substring(7);
 const sessionId = "demo-session-" + Math.random().toString(36).substring(7);
 let websocket = null;
 let is_audio = false;
@@ -258,16 +258,13 @@ function connectWebsocket() {
             url: ws_url
         }, '🔌', 'system');
 
-        // Send Initial Screenshot
-        takeScreenshot();
-
         // Enable the Send button
         document.getElementById("sendButton").disabled = false;
         addSubmitHandler();
     };
 
     // Handle incoming messages
-    websocket.onmessage = function (event) {
+    websocket.onmessage = async function (event) {
         // Parse the incoming ADK Event
         const adkEvent = JSON.parse(event.data);
         console.log("[AGENT TO CLIENT] ", adkEvent);
@@ -418,9 +415,18 @@ function connectWebsocket() {
                 // Handle Function Calling
                 if (part.functionResponse) {
                     switch (part.functionResponse.name) {
-                        case "send_navigation_coordinates":
-                            const bound = part.functionResponse.response.bound
-                            highlightElement(bound.xmin, bound.xmax, bound.ymin, bound.ymax);
+                        case "request_screenshot":
+                            const screenshotResponse = part.functionResponse.response;
+                            const map = JSON.stringify(generateUIMap());
+                            const screenshot = await captureSafeScreenshot();
+                            sendImage(screenshot.split(',')[1]);
+                            sendMessage(ANALYZE_CONTEXT(screenshotResponse.intent, map));
+                            break;
+                        case "dispatch_next_action":
+                            const response = part.functionResponse.response;
+                            const bound = response.rect;
+                            highlightElement(bound.x, bound.x + bound.w, bound.y, bound.y + bound.h);
+                            listenToElement(response.id, () => sendMessage(STEP_COMPLETED));
                             break;
                     }
                 }
@@ -538,6 +544,7 @@ let micStream;
 // Import the audio worklets
 import {startAudioPlayerWorklet} from "./audio-player.js";
 import {startAudioRecorderWorklet} from "./audio-recorder.js";
+import {captureSafeScreenshot, generateUIMap, highlightElement, listenToElement} from "./utilities/tools";
 
 // Start audio
 function startAudio() {
@@ -561,6 +568,7 @@ function startAudio() {
 const startAudioButton = document.getElementById("startAudioButton");
 startAudioButton.addEventListener("click", () => {
     startAudioButton.disabled = true;
+    sendMessage(INITIALIZE_SESSION);
     startAudio();
     is_audio = true;
     addSystemMessage("Audio mode enabled - you can now speak to the agent");
@@ -582,34 +590,4 @@ function audioRecorderHandler(pcmData) {
         // Log to console panel (optional, can be noisy with frequent audio chunks)
         // addConsoleEntry('outgoing', `Audio chunk: ${pcmData.byteLength} bytes`);
     }
-}
-
-// --------------------------------------------- Actions
-function takeScreenshot() {
-    html2canvas(document.querySelector("#capture")).then(canvas => {
-        // Create a link to download the image
-        const image = canvas.toDataURL("image/jpeg");
-        const base64Data = image.split(',')[1];
-        sendImage(base64Data);
-    });
-}
-
-function highlightElement(xmin, xmax, ymin, ymax) {
-    const canvas = document.getElementById('canvas');
-    console.log(`New: ${xmin} -> ${xmax} & ${ymin} -> ${ymax}`);
-    console.log(canvas.width)
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    const ctx = canvas.getContext('2d');
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height); // clear everything
-    ctx.strokeStyle = 'red';
-    ctx.lineWidth = 2;
-    ctx.fillStyle = 'rgba(255, 0, 0, 0.15)';
-    const newXMin =  xmin / 1000 * canvas.width;
-    const newYMin =  ymin / 1000 * canvas.height;
-    const newXMax =  xmax / 1000 * canvas.width;
-    const newYMax =  ymax / 1000 * canvas.height;
-    ctx.fillRect(newXMin, newYMin, newXMax - newXMin, newYMax - newYMin);
-    ctx.strokeRect(newXMin, newYMin, newXMax - newXMin, newYMax - newYMin);
 }
