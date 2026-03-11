@@ -27,18 +27,29 @@ const getLabelText = (el) => {
 
 export function generateUIMap(rootElement = document.body) {
     const interactiveSelectors = [
-        'button', 'a', 'input', 'select', 'textarea',
+        ['uxig-interactive-element'], // TODO: change name
+        // Elements
+        'button:not([disabled])',
+        'a[href]',
+        'input:not([type="hidden"]):not([disabled])',
+        'select:not([disabled])',
+        'textarea:not([disabled])',
+        'summary',
+        '[contenteditable="true"]',
         // ARIA
-        '[role="button"]', '[role="link"]', '[role="menuitem"]', '[role="tab"]',
-        '[role="checkbox"]', '[role="radio"]', '[role="switch"]', '[role="combobox"]',
-        '[onclick]', // Legacy JS clicks
-        '.btn', '.button', '.clickable' // Common CSS utility classes (optional but helpful)
+        '[role="button"]',
+        '[role="link"]',
+        '[role="menuitem"]',
+        '[role="tab"]',
+        '[role="checkbox"]',
+        '[role="radio"]',
+        '[role="switch"]',
+        '[role="combobox"]',
+        '[role="treeitem"]',
+        '[role="option"]'
     ].join(',');
 
     const elements = rootElement.querySelectorAll(interactiveSelectors);
-    const vWidth = window.innerWidth;
-    const vHeight = window.innerHeight;
-
     return Array.from(elements).map((el, index) => {
         const rect = el.getBoundingClientRect();
         const style = window.getComputedStyle(el);
@@ -46,7 +57,6 @@ export function generateUIMap(rootElement = document.body) {
         const isZeroSize = rect.width === 0 || rect.height === 0;
         const isHiddenCSS = style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0';
         const noPointer = style.pointerEvents === 'none'; // check if unclickable
-        const isOffScreen = rect.bottom < 0 || rect.top > vHeight || rect.right < 0 || rect.left > vWidth;
 
         if (isZeroSize || isHiddenCSS || noPointer) return null; // skip this element
         if (!el.id) el.id = `uxi-${index}`; // define id if non-existing
@@ -54,16 +64,10 @@ export function generateUIMap(rootElement = document.body) {
         return {
             id: el.id,
             type: el.tagName.toLowerCase(),
-            role: el.getAttribute('role') || 'none',
             text: ((el instanceof HTMLInputElement && getLabelText(el)) || (el instanceof HTMLElement && el.innerText) || '').trim(),
-            // Normalized Coordinates (0-1000)
-            rect: {
-                x: Math.round((rect.left / vWidth) * 1000),
-                y: Math.round((rect.top / vHeight) * 1000),
-                w: Math.round((rect.width / vWidth) * 1000),
-                h: Math.round((rect.height / vHeight) * 1000)
-            },
-            isVisible: !isOffScreen // Let the AI know if it needs to tell the user to scroll
+            ...(el.getAttribute('role') ? {role: el.getAttribute('role')} : {}),
+            // TODO: change name
+            ...(el.getAttribute('uxiguide-purpose') ? {purpose: el.getAttribute('uxiguide-purpose')} : {})
         };
     }).filter(Boolean); // Remove nulls
 }
@@ -114,6 +118,7 @@ export async function captureSafeScreenshot(rootElement = document.body) {
                     'input[type="password"]',
                     'input[name*="cvv"]',
                     'input[name*="cardnumber"]',
+                    // TODO: change naming here
                     '[data-uxiguide-ignore]',
                     '.uxiguide-ignore',
                     'iframe',
@@ -150,48 +155,78 @@ export async function captureSafeScreenshot(rootElement = document.body) {
     }
 }
 
-// --------------------------------------------- Highlighting Elements
-function stopHighlightAnimation() {
-    window.__stopHighlight?.();
+// --------------------------------------------- Go to Elements
+export function goToElement(id) {
+    const element = document.getElementById(id);
+    if (element) element.scrollIntoView({behavior: "smooth", block: "start"});
 }
 
-export function highlightElement(xmin, xmax, ymin, ymax) {
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
+// --------------------------------------------- Highlighting Elements
+function getOrCreateCanvas() {
+    let canvas = document.getElementById('highlight-canvas');
 
-    const docHeight = document.documentElement.scrollHeight;
-    const docWidth = document.documentElement.scrollWidth;
+    if (!canvas) {
+        canvas = document.createElement('canvas');
+        canvas.id = 'highlight-canvas';
 
-    if (canvas.height !== docHeight || canvas.width !== docWidth) {
-        canvas.width = docWidth;
-        canvas.height = docHeight;
-        canvas.style.position = 'absolute';
-        canvas.style.top = '0';
-        canvas.style.left = '0';
-        canvas.style.pointerEvents = 'none';
+        // Essential styles for an overlay
+        Object.assign(canvas.style, {
+            position: 'fixed',
+            top: '0',
+            left: '0',
+            width: '100vw',
+            height: '100vh',
+            pointerEvents: 'none', // Critical: lets users click through the highlight
+            zIndex: '2147483647',   // Maximum possible z-index
+            display: 'block'
+        });
+
+        document.body.appendChild(canvas);
     }
 
-    const newXMin = (xmin / 1000) * window.innerWidth;
-    const newYMin = (ymin / 1000) * window.innerHeight + window.scrollY;
-    const newXMax = (xmax / 1000) * window.innerWidth;
-    const newYMax = (ymax / 1000) * window.innerHeight + window.scrollY;
-    const w = newXMax - newXMin;
-    const h = newYMax - newYMin;
+    return canvas;
+}
+
+export function highlightElement(elementId) {
+    // Cleanup any existing highlight first
+    stopHighlight();
+
+    const targetEl = document.getElementById(elementId);
+    const canvas = getOrCreateCanvas();
+    if (!targetEl) return;
+
+    const ctx = canvas.getContext('2d');
+
+    // 1. Fix the canvas to the viewport
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    canvas.style.position = 'fixed';
+    canvas.style.top = '0';
+    canvas.style.left = '0';
+    canvas.style.pointerEvents = 'none';
+    canvas.style.zIndex = '9999'; // Ensure it's on top
 
     let animId;
     let startTime = null;
-    const CORNER = Math.min(w, h) * 0.25; // corner bracket length
 
     function draw(ts) {
         if (!startTime) startTime = ts;
-        const t = (ts - startTime) / 1000; // seconds elapsed
+        const t = (ts - startTime) / 1000;
 
+        // 2. Get LIVE coordinates relative to the current viewport
+        const rect = targetEl.getBoundingClientRect();
+        const {left: x, top: y, width: w, height: h} = rect;
+        const xMax = x + w;
+        const yMax = y + h;
+        const CORNER = Math.min(w, h) * 0.25;
+
+        // Clear based on viewport size
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // --- 1. Soft fill, pulsing opacity ---
+        // --- 1. Soft fill ---
         const fillAlpha = 0.08 + 0.07 * Math.sin(t * 3);
         ctx.fillStyle = `rgba(0, 200, 255, ${fillAlpha})`;
-        ctx.fillRect(newXMin, newYMin, w, h);
+        ctx.fillRect(x, y, w, h);
 
         // --- 2. Animated dashed border ---
         const dashOffset = (t * 60) % 20;
@@ -200,9 +235,7 @@ export function highlightElement(xmin, xmax, ymin, ymax) {
         ctx.lineWidth = 1.5;
         ctx.setLineDash([8, 4]);
         ctx.lineDashOffset = -dashOffset;
-        ctx.shadowColor = 'rgba(0, 220, 255, 0.9)';
-        ctx.shadowBlur = 8;
-        ctx.strokeRect(newXMin, newYMin, w, h);
+        ctx.strokeRect(x, y, w, h);
         ctx.restore();
 
         // --- 3. Pulsing corner brackets ---
@@ -210,17 +243,12 @@ export function highlightElement(xmin, xmax, ymin, ymax) {
         ctx.save();
         ctx.strokeStyle = `rgba(0, 255, 220, ${pulse})`;
         ctx.lineWidth = 3;
-        ctx.lineCap = 'round';
-        ctx.shadowColor = 'rgba(0, 255, 180, 1)';
-        ctx.shadowBlur = 12 + 6 * Math.sin(t * 4);
-        ctx.setLineDash([]);
 
         const corners = [
-            // [startX, startY, endX1, endY1, endX2, endY2]
-            [newXMin, newYMin + CORNER, newXMin, newYMin, newXMin + CORNER, newYMin],
-            [newXMax - CORNER, newYMin, newXMax, newYMin, newXMax, newYMin + CORNER],
-            [newXMax, newYMax - CORNER, newXMax, newYMax, newXMax - CORNER, newYMax],
-            [newXMin + CORNER, newYMax, newXMin, newYMax, newXMin, newYMax - CORNER],
+            [x, y + CORNER, x, y, x + CORNER, y],           // Top Left
+            [xMax - CORNER, y, xMax, y, xMax, y + CORNER],   // Top Right
+            [xMax, yMax - CORNER, xMax, yMax, xMax - CORNER, yMax], // Bottom Right
+            [x + CORNER, yMax, x, yMax, x, yMax - CORNER],   // Bottom Left
         ];
 
         for (const [x1, y1, mx, my, x2, y2] of corners) {
@@ -232,45 +260,63 @@ export function highlightElement(xmin, xmax, ymin, ymax) {
         }
         ctx.restore();
 
-        // --- 4. Shimmer sweep ---
-        const sweepX = newXMin + (w * ((t * 0.6) % 1.4) - w * 0.2);
-        const grad = ctx.createLinearGradient(sweepX - 40, 0, sweepX + 40, 0);
-        grad.addColorStop(0, 'rgba(255,255,255,0)');
-        grad.addColorStop(0.5, 'rgba(255,255,255,0.12)');
-        grad.addColorStop(1, 'rgba(255,255,255,0)');
-        ctx.fillStyle = grad;
-        ctx.fillRect(newXMin, newYMin, w, h);
-
         animId = requestAnimationFrame(draw);
     }
 
-    stopHighlightAnimation(); // cancel any previous
-    animId = requestAnimationFrame(draw);
-
-    // Store cancel handle globally so `clear` can stop it
-    window.__highlightAnimId = animId;
-    window.__stopHighlight = () => {
-        cancelAnimationFrame(window.__highlightAnimId);
+    // Handle window resizing
+    const handleResize = () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
     };
+    window.addEventListener('resize', handleResize);
+
+    animId = requestAnimationFrame(draw);
+    window.__highlightAnimId = animId;
+}
+
+let resizeHandler = null;
+
+export function stopHighlight() {
+    const canvas = document.getElementById('highlight-canvas');
+    if (canvas) canvas.remove();
+
+    if (window.__highlightAnimId) {
+        cancelAnimationFrame(window.__highlightAnimId);
+    }
+
+    if (resizeHandler) {
+        window.removeEventListener('resize', resizeHandler);
+        resizeHandler = null;
+    }
 }
 
 // --------------------------------------------- Listening to Elements
 export function listenToElement(id, callback) {
     const element = document.getElementById(id);
     if (element) {
+        // Determine the category
+        let category = 'click'; // Default
+        if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA' || element.isContentEditable) {
+            category = 'input';
+        } else if (element.tagName === 'SELECT' || element.getAttribute('role') === 'combobox') {
+            category = 'selection';
+        }
+
         const listener = (_) => {
             callback();
             element.removeEventListener("click", listener);
+            stopHighlight();
             document.getElementById("uxiguide-next-button")?.remove();
         }
 
-        if (element?.tagName !== "INPUT") element.addEventListener("click", listener);
+        if (category === "click") element.addEventListener("click", listener, {once: true});
         else {
+            // TODO: make button close to trigger
             const doneBtn = document.createElement('button');
             doneBtn.id = "uxiguide-next-button";
             doneBtn.innerHTML = 'DONE!'; // Or use an icon/text
             element.insertAdjacentElement("afterend", doneBtn);
-            doneBtn.addEventListener('click', listener);
+            doneBtn.addEventListener('click', listener, {once: true});
         }
     }
 }

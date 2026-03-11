@@ -1,5 +1,11 @@
 import {UIChangesWatcher} from "./utilities/capture.js";
-import {captureSafeScreenshot, generateUIMap, highlightElement, listenToElement} from "./utilities/tools.js";
+import {
+    captureSafeScreenshot,
+    generateUIMap,
+    goToElement,
+    highlightElement,
+    listenToElement
+} from "./utilities/tools.js";
 import {INITIALIZE_SESSION, STEP_COMPLETED, UPDATE_VISUAL_MEMORY} from "./utilities/commands.js";
 
 /**
@@ -429,8 +435,8 @@ function connectWebsocket() {
                     switch (part.functionResponse.name) {
                         case "dispatch_next_action":
                             const response = part.functionResponse.response;
-                            const bound = response.rect;
-                            highlightElement(bound.x, bound.x + bound.w, bound.y, bound.y + bound.h);
+                            goToElement(response.id);
+                            highlightElement(response.id);
                             listenToElement(response.id, () => sendMessage(STEP_COMPLETED));
                             break;
                     }
