@@ -1,3 +1,7 @@
+import {UIChangesWatcher} from "./utilities/capture.js";
+import {captureSafeScreenshot, generateUIMap, highlightElement, listenToElement} from "./utilities/tools.js";
+import {INITIALIZE_SESSION, STEP_COMPLETED, UPDATE_VISUAL_MEMORY} from "./utilities/commands.js";
+
 /**
  * WebSocket handling
  */
@@ -7,6 +11,14 @@ const userId = "demo-user-" + Math.random().toString(36).substring(7);
 const sessionId = "demo-session-" + Math.random().toString(36).substring(7);
 let websocket = null;
 let is_audio = false;
+
+// Watcher
+const watcher = new UIChangesWatcher(async (_) => {
+    const screenshot = await captureSafeScreenshot();
+    sendImage(screenshot.split(',')[1]);
+    const map = JSON.stringify(generateUIMap());
+    sendMessage(UPDATE_VISUAL_MEMORY(map));
+});
 
 // Build WebSocket URL with RunConfig options as query parameters
 function getWebSocketUrl() {
@@ -415,13 +427,6 @@ function connectWebsocket() {
                 // Handle Function Calling
                 if (part.functionResponse) {
                     switch (part.functionResponse.name) {
-                        case "request_screenshot":
-                            const screenshotResponse = part.functionResponse.response;
-                            const map = JSON.stringify(generateUIMap());
-                            const screenshot = await captureSafeScreenshot();
-                            sendImage(screenshot.split(',')[1]);
-                            sendMessage(ANALYZE_CONTEXT(screenshotResponse.intent, map));
-                            break;
                         case "dispatch_next_action":
                             const response = part.functionResponse.response;
                             const bound = response.rect;
@@ -544,7 +549,6 @@ let micStream;
 // Import the audio worklets
 import {startAudioPlayerWorklet} from "./audio-player.js";
 import {startAudioRecorderWorklet} from "./audio-recorder.js";
-import {captureSafeScreenshot, generateUIMap, highlightElement, listenToElement} from "./utilities/tools";
 
 // Start audio
 function startAudio() {
@@ -569,6 +573,7 @@ const startAudioButton = document.getElementById("startAudioButton");
 startAudioButton.addEventListener("click", () => {
     startAudioButton.disabled = true;
     sendMessage(INITIALIZE_SESSION);
+    watcher.initialTrigger();
     startAudio();
     is_audio = true;
     addSystemMessage("Audio mode enabled - you can now speak to the agent");
