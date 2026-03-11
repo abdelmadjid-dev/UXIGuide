@@ -39,24 +39,19 @@ When evaluating the User's Intent against your current visual memory, strictly f
   1. Verbally explain to the user why the action cannot be completed here.
 """
 
-
-def dispatch_next_action(id: str, x: int, y: int, w: int, h: int, is_final_action: bool) -> dict:
+# TODO: limit actions only when id is available
+def dispatch_next_action(id: str, is_final_action: bool) -> dict:
     """
     Sends the single next action that the user has to do based on the provided screenshot and DOM map.
 
     Args:
         id: The ID of the element from the DOM mapping. Use "none" if no ID is available.
-        x: The horizontal left coordinate of the element (normalized 0-1000).
-        y: The vertical top coordinate of the element (normalized 0-1000).
-        w: The width of the element.
-        h: The height of the element.
         is_final_action: True if this specific action completes the user's current intent. False if more actions are needed on this screen, or if clicking this will change the page and require a new screenshot.
     """
     print("calling dispatch_next_action")
     return {
         "status": "action_dispatched",
         "id": id,
-        "rect": {"x": x, "y": y, "w": w, "h": h},
         "is_final_action": is_final_action
     }
 
