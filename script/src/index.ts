@@ -1,6 +1,6 @@
 import {Config} from "./types/config.types";
 import {UXIGuideUI} from "./ui/UXIGuideUI.ts";
-import {connectWebsocket, sendImage, sendMessage, startAudio, stopAudio} from "./core/socket.ts";
+import {closeWebsocket, connectWebsocket, sendImage, sendMessage, startAudio, stopAudio} from "./core/socket.ts";
 import {generateUIMap} from "./core/mapper.ts";
 import {captureSafeScreenshot} from "./core/capturer.ts";
 
@@ -33,21 +33,28 @@ class UXIGuideScript {
         if (this.config.debug) console.log(`UXIGuideScript Initializing with key: ${this.apiKey}`);
 
         // Initialize
-        this.ui = new UXIGuideUI(() => {
-            if (this.config.debug) console.log('UXIGuide: Consent Approved');
-            startAudio();
-            sendMessage("COMMAND::Hi");
-            this.ui?.startAnimation();
-        });
+        this.ui = new UXIGuideUI(
+            // On Open Connection
+            async () => {
+                if (this.config.debug) console.log('UXIGuide: Consent Approved');
+                startAudio();
+                sendMessage("COMMAND::Hi");
+            },
+            // On Close Connection
+            () => {
+                closeWebsocket();
+            }
+        );
 
         // Initialize Websocket
         connectWebsocket(
             async (name: string, response: any) => {
                 switch (name) {
                     case "request_screenshot":
+                        this.ui?.showFlash();
+                        this.ui?.showToast();
                         const map = JSON.stringify(generateUIMap());
                         sendMessage(`dom map: ${map}`);
-                        this.ui?.showScreenshotToast();
                         const screenshot = await captureSafeScreenshot();
                         sendImage(screenshot.split(',')[1]);
                         sendMessage("COMMAND::image_sent");

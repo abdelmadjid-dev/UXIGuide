@@ -1,4 +1,4 @@
-/* Floating Action Button */
+/* --------------------------- FAB ------------------------------ */
 .uxiguide-fab {
     position: fixed;
     bottom: 32px;
@@ -18,6 +18,12 @@
     transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+.uxiguide-fab-hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(20px);
+}
+
 .uxiguide-fab:hover {
     transform: scale(1.1);
 }
@@ -28,8 +34,18 @@
 }
 
 .uxiguide-fab.is-recording {
-    background: #ff4444; /* Red color */
+    background: #ff4444;
+}
+
+.uxiguide-fab.is-recording::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: rgba(255, 68, 68, 0.7);
     animation: pulse-red 1.5s infinite;
+    z-index: -1;
 }
 
 @keyframes pulse-red {
@@ -49,7 +65,46 @@
     }
 }
 
-/* Consent Dialog & Overlay */
+#uxiguide-next-btn {
+    position: fixed;
+    bottom: 32px;
+    right: 104px;
+    height: 64px;
+    padding: 12px 20px;
+    background: #4F46E5;
+    color: white;
+    border: none;
+    border-radius: 30px;
+    font-weight: 600;
+    cursor: pointer;
+    z-index: 9998;
+    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    animation: uxi-pulse 2s infinite;
+}
+
+#uxiguide-next-btn:hover {
+    transform: scale(1.05);
+    background: #4338CA;
+}
+
+@keyframes uxi-pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7);
+    }
+    70% {
+        transform: scale(1.03);
+        box-shadow: 0 0 0 10px rgba(79, 70, 229, 0);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(79, 70, 229, 0);
+    }
+}
+
+/* ------------------------- CONSENT ---------------------------- */
 .uxiguide-overlay {
     position: fixed;
     inset: 0;
@@ -85,7 +140,6 @@
     line-height: 1.5;
 }
 
-/* Permission Items */
 .uxiguide-feature-row {
     display: flex;
     gap: 16px;
@@ -115,7 +169,6 @@
     color: #888;
 }
 
-/* Buttons */
 .uxiguide-button-group {
     display: flex;
     gap: 12px;
@@ -146,7 +199,34 @@
     color: white;
 }
 
-/* Toast Container */
+/* -------------------- SCREENSHOT FLASH ----------------------- */
+.screenshot-flash {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: white;
+    opacity: 0;
+    pointer-events: none; /* Ensure it doesn't block clicks */
+    z-index: 9999;
+}
+
+/* The Animation Trigger */
+.animate-flash {
+    animation: flash-effect 0.5s ease-out;
+}
+
+@keyframes flash-effect {
+    0% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
+/* ------------------------- TOAST ---------------------------- */
 #uxiguide-toast-container {
     position: fixed;
     bottom: 32px; /* Align with your FAB height */
@@ -156,17 +236,18 @@
     pointer-events: none;
 }
 
-/* Toast Styling */
 .uxiguide-toast {
-    background: rgba(20, 20, 20, 0.95); /* Your #141414 with slight transparency */
+    background: rgba(20, 20, 20, 0.95);
     color: white;
-    padding: 14px 28px;
-    border-radius: 16px; /* Matching the softened corners of your UI */
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-family: inherit;
     font-size: 14px;
     font-weight: 500;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
     backdrop-filter: blur(8px);
+    margin-bottom: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 
     /* Animation States */
     opacity: 0;
@@ -175,56 +256,12 @@
     opacity 0.3s ease;
 }
 
-/* Entrance Trigger */
+.uxiguide-toast.error {
+    background: rgba(220, 38, 38, 0.95);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
 .uxiguide-toast.show {
     opacity: 1;
-    transform: translateY(0);
-}
-
-/* --------------------------------------------------- */
-.uxiguide-overlay-border {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 9999999;
-    pointer-events: none;
-    overflow: hidden;
-    /* Ensures the pseudo-element stays within the box */
-}
-
-.uxiguide-overlay-border::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(var(--a), #BADC9D, #9DD1C8, #BADC9D, #9DD1C8, #BADC9D);
-    filter: blur(48px);
-    /* Creates the soft shadow effect */
-    z-index: 9999999;
-    mask: linear-gradient(to top, transparent, black) top / 100% 6%,
-    linear-gradient(to bottom, transparent, black) bottom / 100% 6%,
-    linear-gradient(to left, transparent, black) left / 3% 100%,
-    linear-gradient(to right, transparent, black) right / 3% 100%;
-    mask-repeat: no-repeat;
-    animation: moveGradient 5s infinite alternate;
-}
-
-@property --a {
-    syntax: '<angle>';
-    inherits: false;
-    initial-value: 0deg;
-}
-
-@keyframes moveGradient {
-    0% {
-        --a: 0deg;
-    }
-
-    100% {
-        --a: 360deg;
-    }
+    transform: translateY(0) scale(1);
 }
