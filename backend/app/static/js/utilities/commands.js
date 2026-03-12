@@ -11,9 +11,8 @@ New DOM Mapping: ${map}
 Instructions: 
 1. Silently update your internal memory with this new visual context. 
 2. Automatically run your Action Evaluation rules against this new context to determine the next move.
-3. CRITICAL OUTPUT RULE: Your spoken response must ONLY contain the instruction for the user's next step. DO NOT 
-acknowledge receiving this update, DO NOT say "I see the new screen", and DO NOT narrate your thought process. Just give 
-the next instruction naturally.
+3. CRITICAL OUTPUT RULE: DO NOT acknowledge receiving this update, DO NOT say "I see the new screen", and DO NOT narrate 
+your thought process. Just give the next instruction naturally.
 `
 
 export const STEP_COMPLETED = `COMMAND: STEP_COMPLETED
@@ -26,5 +25,5 @@ Instructions: Evaluate the remaining steps to achieve the user's goal based on y
 
     Branch B [IF MORE ACTIONS ARE NEEDED ON THIS SAME SCREEN]:
         - Call the tool \`dispatch_next_action\` ONCE AGAIN with the payload for the NEXT sequential action.
-        - Verbally explain this single next step to the user.
+        - Speak ONE single sentence explaining this next step. Do not repeat the instruction.
 `
