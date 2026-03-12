@@ -1,6 +1,8 @@
 import asyncio
 import base64
 import json
+import logging
+import warnings
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -14,6 +16,12 @@ from starlette.responses import FileResponse
 from starlette.staticfiles import StaticFiles
 
 from app.agent import agent
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
+# Suppress Pydantic serialization warnings
+warnings.filterwarnings("ignore", category=UserWarning, module="pydantic")
 
 # Load environment variables from .env file BEFORE importing agent
 load_dotenv(Path(__file__).parent / ".env")
@@ -72,6 +80,15 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str, session_id: str
 
     live_request_queue = LiveRequestQueue()
 
+    async def heartbeat_task(ws: WebSocket):
+        try:
+            while True:
+                await asyncio.sleep(5)  # Send ping every 5 seconds
+                await ws.send_text("ping")
+        except Exception:
+            # If sending fails, the socket is likely already dead
+            pass
+
     async def upstream_task() -> None:
         """Receives messages from WebSocket and sends to LiveRequestQueue."""
         while True:
@@ -89,20 +106,21 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str, session_id: str
             # Handle text frames (JSON messages)
             elif "text" in message:
                 text_data = message["text"]
-                json_message = json.loads(text_data)
+                if text_data != "pong":
+                    json_message = json.loads(text_data)
 
-                # Extract text from JSON and send to LiveRequestQueue
-                if json_message.get("type") == "text":
-                    content = types.Content(
-                        parts=[types.Part(text=json_message["text"])]
-                    )
-                    live_request_queue.send_content(content)
+                    # Extract text from JSON and send to LiveRequestQueue
+                    if json_message.get("type") == "text":
+                        content = types.Content(
+                            parts=[types.Part(text=json_message["text"])]
+                        )
+                        live_request_queue.send_content(content)
 
-                elif json_message.get("type") == "image":
-                    image_data = base64.b64decode(json_message["data"])
-                    mime_type = json_message.get("mimeType", "image/jpeg")
-                    image_blob = types.Blob(mime_type=mime_type, data=image_data)
-                    live_request_queue.send_realtime(image_blob)
+                    elif json_message.get("type") == "image":
+                        image_data = base64.b64decode(json_message["data"])
+                        mime_type = json_message.get("mimeType", "image/jpeg")
+                        image_blob = types.Blob(mime_type=mime_type, data=image_data)
+                        live_request_queue.send_realtime(image_blob)
 
     async def downstream_task() -> None:
         """Receives Events from run_live() and sends to WebSocket."""
@@ -117,11 +135,11 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str, session_id: str
 
     # Run both tasks concurrently
     try:
-        await asyncio.gather(upstream_task(), downstream_task())
+        await asyncio.gather(heartbeat_task(websocket), upstream_task(), downstream_task())
     except WebSocketDisconnect:
-        print("Client disconnected normally")
+        logger.debug("Client disconnected normally")
     except Exception as e:
-        print(f"Unexpected error in streaming tasks: {e}")
+        logger.error(f"Unexpected error in streaming tasks: {e}", exc_info=True)
     finally:
         # Always close the queue, even if exceptions occurred
         live_request_queue.close()

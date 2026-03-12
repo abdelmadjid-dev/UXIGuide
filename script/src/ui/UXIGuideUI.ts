@@ -93,7 +93,6 @@ export class UXIGuideUI {
     }
 
     private triggerMainAction() {
-        console.log('UXIGuide: Running main assistant logic...');
         this.onApprove();
     }
 

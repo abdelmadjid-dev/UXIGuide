@@ -1,6 +1,6 @@
 import {Config} from "./common/config.types";
 import {UXIGuideUI} from "./ui/UXIGuideUI.ts";
-import {closeWebsocket, connectWebsocket, sendImage, sendMessage, startAudio, stopAudio} from "./core/socket.ts";
+import {userInitiatedClosure, connectWebsocket, sendImage, sendMessage, startAudio} from "./core/socket.ts";
 
 import './ui/styles.css';
 import {INITIALIZE_SESSION, STEP_COMPLETED, UPDATE_VISUAL_MEMORY} from "./common/commands.ts";
@@ -54,7 +54,7 @@ class UXIGuideScript {
             },
             // On Close Connection
             () => {
-                closeWebsocket();
+                userInitiatedClosure();
             }
         );
 
@@ -69,14 +69,10 @@ class UXIGuideScript {
                         break;
                 }
             },
-            // Closed Connection...
-            () => {
-                if (this.config.debug) console.log('Connection with Websocket opened');
-                stopAudio();
-                this.ui?.stopAnimation();
-            },
-            // On Error
-            () => {}
+            // On Connection Closed
+            () => this.ui!.stopAnimation(),
+            // On Toast
+            (message, state) => this.ui!.showToast(message, state)
         )
 
         this.isInitialized = true;

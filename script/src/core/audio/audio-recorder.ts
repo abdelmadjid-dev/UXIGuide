@@ -3,7 +3,6 @@ let micStream;
 export async function startAudioRecorderWorklet(audioRecorderHandler: (pcmData: ArrayBuffer) => void) {
   // Create an AudioContext
   const audioRecorderContext = new AudioContext({ sampleRate: 16000 });
-  console.log("AudioContext sample rate:", audioRecorderContext.sampleRate);
 
   // Load the AudioWorklet module
   const workletURL = new URL("./pcm-recorder-processor.js", import.meta.url);
@@ -38,7 +37,6 @@ export async function startAudioRecorderWorklet(audioRecorderHandler: (pcmData: 
  */
 export function stopMicrophone(micStream: MediaStream) {
   micStream.getTracks().forEach((track) => track.stop());
-  console.log("stopMicrophone(): Microphone stopped.");
 }
 
 // Convert Float32 samples to 16-bit PCM.
