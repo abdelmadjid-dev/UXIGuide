@@ -1,3 +1,9 @@
+declare global {
+    interface Window {
+        __highlightAnimId?: number; // or 'any', but 'number' is typical for animation IDs
+    }
+}
+
 export class UXIGuideUI {
     private fab: HTMLButtonElement | null = null;
     private modalOverlay: HTMLDivElement | null = null;
@@ -102,7 +108,7 @@ export class UXIGuideUI {
         }, 500);
     }
 
-    showToast(message = "Screenshot taken! 📸", type = 'info') {
+    showToast(message: string, type = 'info') {
         let container = document.getElementById('uxiguide-toast-container');
         if (!container) {
             container = document.createElement('div');
@@ -149,72 +155,129 @@ export class UXIGuideUI {
         `;
     }
 
-    highlightElement(xmin: number, xmax: number, ymin: number, ymax: number) {
-        const canvas = document.getElementById('canvas') as HTMLCanvasElement;
-        const ctx = canvas.getContext('2d')!;
+    listenToElement(id: string, callback: () => void) {
+        const element = document.getElementById(id);
+        if (element) {
+            // Determine the category
+            let category = 'click'; // Default
+            if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA' || element.isContentEditable) {
+                category = 'input';
+            } else if (element.tagName === 'SELECT' || element.getAttribute('role') === 'combobox') {
+                category = 'selection';
+            }
 
-        const docHeight = document.documentElement.scrollHeight;
-        const docWidth = document.documentElement.scrollWidth;
+            const listener = (_: any) => {
+                callback();
+                this.stopHighlight();
+                element.removeEventListener("click", listener);
+                document.getElementById("uxiguide-next-btn")?.remove();
+            }
 
-        if (canvas.height !== docHeight || canvas.width !== docWidth) {
-            canvas.width = docWidth;
-            canvas.height = docHeight;
-            canvas.style.position = 'absolute';
-            canvas.style.top = '0';
-            canvas.style.left = '0';
-            canvas.style.pointerEvents = 'none';
+            if (category === "click") element.addEventListener("click", listener, {once: true});
+            else {
+                const doneBtn = document.createElement('button');
+                doneBtn.id = "uxiguide-next-btn";
+                doneBtn.innerHTML = "I've Done it, What's next?";
+                doneBtn.addEventListener('click', listener, {once: true});
+                document.body.appendChild(doneBtn);
+            }
+        }
+    }
+
+    // --------------------------------------------- Go to Elements
+    goToElement(id: string) {
+        const element = document.getElementById(id);
+        if (element) element.scrollIntoView({behavior: "smooth", block: "start"});
+    }
+
+    // --------------------------------------------- Highlighting Elements
+    getOrCreateCanvas(): HTMLCanvasElement {
+        let canvas: HTMLCanvasElement | null = document.getElementById('highlight-canvas') as HTMLCanvasElement;
+
+        if (!canvas) {
+            canvas = document.createElement('canvas');
+            canvas.id = 'highlight-canvas';
+
+            // Essential styles for an overlay
+            Object.assign(canvas.style, {
+                position: 'fixed',
+                top: '0',
+                left: '0',
+                width: '100vw',
+                height: '100vh',
+                pointerEvents: 'none', // Critical: lets users click through the highlight
+                zIndex: '2147483647',   // Maximum possible z-index
+                display: 'block'
+            });
+
+            document.body.appendChild(canvas);
         }
 
-        const newXMin = (xmin / 1000) * window.innerWidth;
-        const newYMin = (ymin / 1000) * window.innerHeight + window.scrollY;
-        const newXMax = (xmax / 1000) * window.innerWidth;
-        const newYMax = (ymax / 1000) * window.innerHeight + window.scrollY;
-        const w = newXMax - newXMin;
-        const h = newYMax - newYMin;
+        return canvas;
+    }
 
-        let animId: number;
+    highlightElement(elementId: string) {
+        // Cleanup any existing highlight first
+        this.stopHighlight();
+
+        const targetEl = document.getElementById(elementId)!;
+        const canvas: HTMLCanvasElement = this.getOrCreateCanvas();
+        if (!targetEl) return;
+
+        const ctx = canvas.getContext('2d')!;
+
+        // Fix the canvas to the viewport
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        canvas.style.position = 'fixed';
+        canvas.style.top = '0';
+        canvas.style.left = '0';
+        canvas.style.pointerEvents = 'none';
+        canvas.style.zIndex = '9999'; // Ensure it's on top
+
+        let animId;
         let startTime: number | null = null;
-        const CORNER = Math.min(w, h) * 0.25; // corner bracket length
 
-        function draw(ts: number) {
+        function draw(ts: DOMHighResTimeStamp) {
             if (!startTime) startTime = ts;
-            const t = (ts - startTime) / 1000; // seconds elapsed
+            const t = (ts - startTime!) / 1000;
 
+            // Get LIVE coordinates relative to the current viewport
+            const rect = targetEl.getBoundingClientRect();
+            const {left: x, top: y, width: w, height: h} = rect;
+            const xMax = x + w;
+            const yMax = y + h;
+            const CORNER = Math.min(w, h) * 0.25;
+
+            // Clear based on viewport size
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // --- 1. Soft fill, pulsing opacity ---
+            // Soft fill
             const fillAlpha = 0.08 + 0.07 * Math.sin(t * 3);
             ctx.fillStyle = `rgba(0, 200, 255, ${fillAlpha})`;
-            ctx.fillRect(newXMin, newYMin, w, h);
+            ctx.fillRect(x, y, w, h);
 
-            // --- 2. Animated dashed border ---
+            // Animated dashed border
             const dashOffset = (t * 60) % 20;
             ctx.save();
             ctx.strokeStyle = 'rgba(0, 220, 255, 0.85)';
             ctx.lineWidth = 1.5;
             ctx.setLineDash([8, 4]);
             ctx.lineDashOffset = -dashOffset;
-            ctx.shadowColor = 'rgba(0, 220, 255, 0.9)';
-            ctx.shadowBlur = 8;
-            ctx.strokeRect(newXMin, newYMin, w, h);
+            ctx.strokeRect(x, y, w, h);
             ctx.restore();
 
-            // --- 3. Pulsing corner brackets ---
+            // Pulsing corner brackets
             const pulse = 0.7 + 0.3 * Math.sin(t * 4);
             ctx.save();
             ctx.strokeStyle = `rgba(0, 255, 220, ${pulse})`;
             ctx.lineWidth = 3;
-            ctx.lineCap = 'round';
-            ctx.shadowColor = 'rgba(0, 255, 180, 1)';
-            ctx.shadowBlur = 12 + 6 * Math.sin(t * 4);
-            ctx.setLineDash([]);
 
             const corners = [
-                // [startX, startY, endX1, endY1, endX2, endY2]
-                [newXMin, newYMin + CORNER, newXMin, newYMin, newXMin + CORNER, newYMin],
-                [newXMax - CORNER, newYMin, newXMax, newYMin, newXMax, newYMin + CORNER],
-                [newXMax, newYMax - CORNER, newXMax, newYMax, newXMax - CORNER, newYMax],
-                [newXMin + CORNER, newYMax, newXMin, newYMax, newXMin, newYMax - CORNER],
+                [x, y + CORNER, x, y, x + CORNER, y],           // Top Left
+                [xMax - CORNER, y, xMax, y, xMax, y + CORNER],   // Top Right
+                [xMax, yMax - CORNER, xMax, yMax, xMax - CORNER, yMax], // Bottom Right
+                [x + CORNER, yMax, x, yMax, x, yMax - CORNER],   // Bottom Left
             ];
 
             for (const [x1, y1, mx, my, x2, y2] of corners) {
@@ -226,49 +289,33 @@ export class UXIGuideUI {
             }
             ctx.restore();
 
-            // --- 4. Shimmer sweep ---
-            const sweepX = newXMin + (w * ((t * 0.6) % 1.4) - w * 0.2);
-            const grad = ctx.createLinearGradient(sweepX - 40, 0, sweepX + 40, 0);
-            grad.addColorStop(0, 'rgba(255,255,255,0)');
-            grad.addColorStop(0.5, 'rgba(255,255,255,0.12)');
-            grad.addColorStop(1, 'rgba(255,255,255,0)');
-            ctx.fillStyle = grad;
-            ctx.fillRect(newXMin, newYMin, w, h);
-
             animId = requestAnimationFrame(draw);
         }
 
-        this.stopHighlightAnimation(); // cancel any previous
-        animId = requestAnimationFrame(draw);
-
-        // Store cancel handle globally so `clear` can stop it
-        (window as any).__highlightAnimId = animId;
-        (window as any).__stopHighlight = () => {
-            cancelAnimationFrame((window as any).__highlightAnimId);
+        // Handle window resizing
+        const handleResize = () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
         };
+        window.addEventListener('resize', handleResize);
+
+        animId = requestAnimationFrame(draw);
+        window.__highlightAnimId = animId;
     }
 
-    listenToElement(id: string, callback: () => void) {
-        const element = document.getElementById(id);
-        if (element) {
-            const listener = (_: PointerEvent) => {
-                callback();
-                element.removeEventListener("click", listener);
-                document.getElementById("uxiguide-next-btn")?.remove();
-            }
+    resizeHandler = null;
 
-            if (element?.tagName !== "INPUT") element.addEventListener("click", listener);
-            else {
-                const doneBtn = document.createElement('button');
-                doneBtn.id = "uxiguide-next-btn";
-                doneBtn.innerHTML = "I've Done it, What's next?";
-                doneBtn.addEventListener('click', listener);
-                document.body.appendChild(doneBtn);
-            }
+    stopHighlight() {
+        const canvas = document.getElementById('highlight-canvas');
+        if (canvas) canvas.remove();
+
+        if (window.__highlightAnimId) {
+            cancelAnimationFrame(window.__highlightAnimId);
         }
-    }
 
-    private stopHighlightAnimation() {
-        (window as any).__stopHighlight?.();
+        if (this.resizeHandler) {
+            window.removeEventListener('resize', this.resizeHandler);
+            this.resizeHandler = null;
+        }
     }
 }
