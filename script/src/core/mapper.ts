@@ -24,17 +24,29 @@ const getLabelText = (el: HTMLInputElement) => {
 
 export function generateUIMap(rootElement = document.body) {
     const interactiveSelectors = [
-        'button', 'a', 'input', 'select', 'textarea',
+        ['uxig-interactive-element'], // TODO: change name
+        // Elements
+        'button:not([disabled])',
+        'a[href]',
+        'input:not([type="hidden"]):not([disabled])',
+        'select:not([disabled])',
+        'textarea:not([disabled])',
+        'summary',
+        '[contenteditable="true"]',
         // ARIA
-        '[role="button"]', '[role="link"]', '[role="menuitem"]', '[role="tab"]',
-        '[role="checkbox"]', '[role="radio"]', '[role="switch"]', '[role="combobox"]',
-        '[onclick]', // Legacy JS clicks
-        '.btn', '.button', '.clickable' // Common CSS utility classes (optional but helpful)
+        '[role="button"]',
+        '[role="link"]',
+        '[role="menuitem"]',
+        '[role="tab"]',
+        '[role="checkbox"]',
+        '[role="radio"]',
+        '[role="switch"]',
+        '[role="combobox"]',
+        '[role="treeitem"]',
+        '[role="option"]'
     ].join(',');
 
     const elements = rootElement.querySelectorAll(interactiveSelectors);
-    const vWidth = window.innerWidth;
-    const vHeight = window.innerHeight;
 
     return Array.from(elements).map((el, index) => {
         const rect = el.getBoundingClientRect();
@@ -43,7 +55,6 @@ export function generateUIMap(rootElement = document.body) {
         const isZeroSize = rect.width === 0 || rect.height === 0;
         const isHiddenCSS = style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0';
         const noPointer = style.pointerEvents === 'none'; // check if unclickable
-        const isOffScreen = rect.bottom < 0 || rect.top > vHeight || rect.right < 0 || rect.left > vWidth;
 
         if (isZeroSize || isHiddenCSS || noPointer) return null; // skip this element
         if (!el.id) el.id = `uxi-${index}`; // define id if non-existing
@@ -51,16 +62,10 @@ export function generateUIMap(rootElement = document.body) {
         return {
             id: el.id,
             type: el.tagName.toLowerCase(),
-            role: el.getAttribute('role') || 'none',
             text: ((el instanceof HTMLInputElement && getLabelText(el)) || (el instanceof HTMLElement && el.innerText) || '').trim(),
-            // Normalized Coordinates (0-1000)
-            rect: {
-                x: Math.round((rect.left / vWidth) * 1000),
-                y: Math.round((rect.top / vHeight) * 1000),
-                w: Math.round((rect.width / vWidth) * 1000),
-                h: Math.round((rect.height / vHeight) * 1000)
-            },
-            isVisible: !isOffScreen // Let the AI know if it needs to tell the user to scroll
+            ...(el.getAttribute('role') ? {role: el.getAttribute('role')} : {}),
+            // TODO: change name
+            ...(el.getAttribute('uxiguide-purpose') ? {purpose: el.getAttribute('uxiguide-purpose')} : {})
         };
     }).filter(Boolean); // Remove nulls
 }

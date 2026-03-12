@@ -1,5 +1,71 @@
 import {domToJpeg} from 'modern-screenshot';
 
+export class UIChangesWatcher {
+    private _debounceTimer: number | null = null;
+    private readonly onCapture: () => void;
+
+    constructor(onCapture: () => Promise<void>) {
+        this.onCapture = onCapture;
+        this._debounceTimer = null;
+        this._init();
+    }
+
+    _init() {
+        // SPA navigation
+        const patchHistory = (method: keyof History) => {
+            const original = (history[method] as Function).bind(history);
+            // @ts-ignore - Necessary because we are overwriting a read-only/fixed method
+            history[method] = (...args: any[]) => {
+                original(...args);
+                this._schedule();
+            };
+        };
+        patchHistory('pushState');
+        patchHistory('replaceState');
+        window.addEventListener('popstate', () => this._schedule());
+        window.addEventListener('hashchange', () => this._schedule());
+
+        // Overlays / dialogs
+        new MutationObserver((mutations) => {
+            for (const {addedNodes} of mutations) {
+                for (const node of addedNodes) {
+                    if (this._isOverlay(node)) {
+                        this._schedule(400);
+                        return;
+                    }
+                }
+            }
+        }).observe(document.body, {childList: true, subtree: true});
+
+        // Developer-flagged elements
+        document.addEventListener('click', (e: PointerEvent) => {
+            // TODO: update flag type & text
+            const target = e.target as Element;
+            if (target.closest('[uxig-ui-change-trigger]')) {
+                this._schedule(500);
+            }
+        });
+    }
+
+    initialTrigger() {
+        this._schedule();
+    }
+
+    _isOverlay(node: Node) {
+        if (!(node instanceof Element)) return false;
+        const selectors = ['[role="dialog"]', '[aria-modal="true"]', '.modal', '.popup', '.drawer'];
+        return selectors.some(s => node.matches?.(s) || node.querySelector?.(s));
+    }
+
+    // Debounce so rapid changes only fire once
+    _schedule(delay = 300) {
+        clearTimeout(this._debounceTimer!);
+        this._debounceTimer = setTimeout(() => {
+            this.onCapture();
+        }, delay);
+    }
+}
+
 function removeOverflows(root: HTMLElement): () => void {
     const affected: Array<{ el: HTMLElement; overflow: string; overflowY: string; overflowX: string }> = [];
 
@@ -45,6 +111,7 @@ export async function captureSafeScreenshot(rootElement = document.body) {
                     'input[type="password"]',
                     'input[name*="cvv"]',
                     'input[name*="cardnumber"]',
+                    // TODO: change naming here
                     '[data-uxiguide-ignore]',
                     '.uxiguide-ignore',
                     'iframe',

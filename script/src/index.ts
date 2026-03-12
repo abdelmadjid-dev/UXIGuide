@@ -1,10 +1,11 @@
-import {Config} from "./types/config.types";
+import {Config} from "./common/config.types";
 import {UXIGuideUI} from "./ui/UXIGuideUI.ts";
 import {closeWebsocket, connectWebsocket, sendImage, sendMessage, startAudio, stopAudio} from "./core/socket.ts";
-import {generateUIMap} from "./core/mapper.ts";
-import {captureSafeScreenshot} from "./core/capturer.ts";
 
 import './ui/styles.css';
+import {INITIALIZE_SESSION, STEP_COMPLETED, UPDATE_VISUAL_MEMORY} from "./common/commands.ts";
+import {captureSafeScreenshot, UIChangesWatcher} from "./core/capturer.ts";
+import {generateUIMap} from "./core/mapper.ts";
 
 class UXIGuideScript {
     private readonly apiKey: string;
@@ -27,6 +28,16 @@ class UXIGuideScript {
         this.init();
     }
 
+    // Watcher
+    watcher = new UIChangesWatcher(async () => {
+        this.ui?.showFlash();
+        this.ui?.showToast("Screenshot taken! 📸");
+        const screenshot = await captureSafeScreenshot();
+        sendImage(screenshot.split(',')[1]);
+        const map = JSON.stringify(generateUIMap());
+        sendMessage(UPDATE_VISUAL_MEMORY(map));
+    });
+
     private init(): void {
         if (this.isInitialized) return;
 
@@ -37,8 +48,9 @@ class UXIGuideScript {
             // On Open Connection
             async () => {
                 if (this.config.debug) console.log('UXIGuide: Consent Approved');
+                sendMessage(INITIALIZE_SESSION);
+                this.watcher.initialTrigger();
                 startAudio();
-                sendMessage("COMMAND::Hi");
             },
             // On Close Connection
             () => {
@@ -50,19 +62,10 @@ class UXIGuideScript {
         connectWebsocket(
             async (name: string, response: any) => {
                 switch (name) {
-                    case "request_screenshot":
-                        this.ui?.showFlash();
-                        this.ui?.showToast();
-                        const map = JSON.stringify(generateUIMap());
-                        sendMessage(`dom map: ${map}`);
-                        const screenshot = await captureSafeScreenshot();
-                        sendImage(screenshot.split(',')[1]);
-                        sendMessage("COMMAND::image_sent");
-                        break;
                     case "dispatch_next_action":
-                        const bound = response.bound
-                        this.ui?.highlightElement(bound.xmin, bound.xmax, bound.ymin, bound.ymax);
-                        this.ui?.listenToElement(response.id, () => sendMessage("COMMAND::next"));
+                        this.ui!.goToElement(response.id);
+                        this.ui!.highlightElement(response.id);
+                        this.ui!.listenToElement(response.id, () => sendMessage(STEP_COMPLETED));
                         break;
                 }
             },
