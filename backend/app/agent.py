@@ -51,7 +51,6 @@ def dispatch_next_action(id: str, is_final_action: bool) -> dict:
         id: The ID of the element from the DOM mapping. Use "none" if no ID is available.
         is_final_action: True if this specific action completes the user's current intent. False if more actions are needed on this screen, or if clicking this will change the page and require a new screenshot.
     """
-    print("calling dispatch_next_action")
     return {
         "status": "action_dispatched",
         "id": id,

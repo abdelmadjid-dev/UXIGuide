@@ -1,4 +1,8 @@
 let websocket: WebSocket | null = null;
+let reconnectAttempts = 0;
+const maxReconnectDelay = 30000; // Max 30 seconds
+let heartbeatTimer: number | undefined = undefined;
+const HEARTBEAT_TIMEOUT = 10000; // 10 seconds
 
 // Build WebSocket URL with RunConfig options as query parameters
 function getWebSocketUrl(userId: string, sessionId: string) {
@@ -11,10 +15,18 @@ function getWebSocketUrl(userId: string, sessionId: string) {
     return queryString ? baseUrl + "?" + queryString : baseUrl;
 }
 
+function startHeartbeat() {
+    clearTimeout(heartbeatTimer);
+    heartbeatTimer = setTimeout(() => {
+        console.warn("Heartbeat lost. Closing connection.");
+        if (websocket) websocket.close(4000, "Heartbeat timeout"); // Trigger onclose/backoff
+    }, HEARTBEAT_TIMEOUT);
+}
+
 export function connectWebsocket(
     onFunctionCalled: (name: string, response: any) => void,
-    onclose: () => void,
-    onError: (event: Event) => void,
+    onConnectionClosed: () => void,
+    showToast: (message: string, state: string) => void,
 ) {
     // Connect websocket - TODO: define both userId and sessionId
     const userId = "demo-user";
@@ -22,15 +34,19 @@ export function connectWebsocket(
     const ws_url = getWebSocketUrl(userId, sessionId);
     websocket = new WebSocket(ws_url);
 
-    //websocket.onopen = onOpen;
+    websocket.onopen = () => {
+        if (reconnectAttempts > 0) showToast("Back online! You can continue talking.", "info");
+    }
     websocket.onmessage = function (event) {
+        // Every time we get ANY message (audio or ping), reset the timer
+        startHeartbeat();
+        if (event.data === "ping") {
+            websocket!.send("pong");
+            return;
+        }
+
         // Parse the incoming ADK Event
         const adkEvent = JSON.parse(event.data);
-
-        // TODO: Handle turn complete event
-        if (adkEvent.turnComplete === true) {
-
-        }
 
         // TODO: Handle interrupted event
         if (adkEvent.interrupted === true) {
@@ -59,17 +75,37 @@ export function connectWebsocket(
             }
         }
     };
-    websocket.onclose = onclose;
-    websocket.onerror = onError;
+    websocket.onclose = (event: CloseEvent) => {
+        clearTimeout(heartbeatTimer); // Don't leak timers
+
+        // stop all when intentional
+        if (event.code === 1000) {
+            stopAudio();
+            onConnectionClosed();
+            return;
+        }
+
+        // backoff strategy
+        const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), maxReconnectDelay);
+        setTimeout(() => {
+            reconnectAttempts++;
+            showToast(`Connection lost. Retrying in ${delay} seconds...`, "error");
+            connectWebsocket(onFunctionCalled, onConnectionClosed, showToast);
+        }, delay);
+    };
+    websocket.onerror = (_: Event) => {
+        // Kill the audio immediately so the "recording" icon disappears
+        stopAudio();
+        showToast("Unable to connect to the server.", "error");
+    };
 }
 
-export function closeWebsocket() {
-    websocket?.close();
+export function userInitiatedClosure() {
+    if (websocket) websocket.close(1000, "User requested disconnect"); // 1000 is a normal closure
 }
 
 export function sendMessage(message: string) {
     if (websocket && websocket.readyState === WebSocket.OPEN) {
-        console.log(`Sending Text Message: ${message.substring(0, 30)}`);
         const jsonMessage = JSON.stringify({
             type: "text",
             text: message
