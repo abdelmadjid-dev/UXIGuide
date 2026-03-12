@@ -2,16 +2,18 @@ export class UXIGuideUI {
     private fab: HTMLButtonElement | null = null;
     private modalOverlay: HTMLDivElement | null = null;
     private readonly onApprove: () => void;
+    private readonly onCloseConnection: () => void;
 
-    constructor(onApprove: () => void) {
+    constructor(onApprove: () => void, onCloseConnection: () => void) {
         this.onApprove = onApprove;
+        this.onCloseConnection = onCloseConnection;
         this.initFloatingActionButton();
     }
 
     private initFloatingActionButton() {
         this.fab = document.createElement('button');
         this.fab.className = 'uxiguide-fab';
-        this.fab.setAttribute('aria-label', 'Open Assistant');
+        this.fab.setAttribute('aria-label', 'Open UXIGuide Assistant');
         this.fab.innerHTML = `
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
@@ -19,10 +21,14 @@ export class UXIGuideUI {
         `;
 
         this.fab.onclick = () => {
-            if (localStorage.getItem('uxiguide-consent') !== 'true') {
+            if (this.fab!.classList.contains('is-recording')) {
+                this.onCloseConnection();
+                this.stopAnimation();
+            } else if (localStorage.getItem('uxiguide-consent') !== 'true') {
                 this.renderConsentModal();
             } else {
                 this.triggerMainAction();
+                this.startAnimation();
             }
         };
 
@@ -85,7 +91,18 @@ export class UXIGuideUI {
         this.onApprove();
     }
 
-    showScreenshotToast(message = "Screenshot taken! 📸") {
+    showFlash() {
+        const overlay = document.createElement("div");
+        overlay.className = "screenshot-flash";
+        document.body.appendChild(overlay);
+        overlay.classList.add('animate-flash');
+        setTimeout(() => {
+            overlay.classList.remove('animate-flash');
+            overlay.remove();
+        }, 500);
+    }
+
+    showToast(message = "Screenshot taken! 📸", type = 'info') {
         let container = document.getElementById('uxiguide-toast-container');
         if (!container) {
             container = document.createElement('div');
@@ -94,7 +111,7 @@ export class UXIGuideUI {
         }
 
         const toast = document.createElement('div');
-        toast.className = 'uxiguide-toast';
+        toast.className = `uxiguide-toast ${type}`;
         toast.textContent = message;
         container.appendChild(toast);
 
@@ -113,21 +130,23 @@ export class UXIGuideUI {
     }
 
     startAnimation() {
-        const overlay = document.createElement("div");
-        overlay.className = "uxiguide-overlay-border";
-        document.body.appendChild(overlay);
-
         // Toggle the recording state
-        this.fab!.classList.toggle('is-recording');
-        this.fab!.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="8"></circle></svg>`;
+        this.fab!.classList.add('is-recording');
+        this.fab!.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        `;
     }
 
     stopAnimation() {
-        const overlaysByClass = document.getElementsByClassName("sixqs-overlay-border");
-        if (overlaysByClass.length > 0) document.body.removeChild(overlaysByClass[0]);
-
-        this.fab!.classList.toggle('is-recording');
-        this.fab!.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>`;
+        this.fab!.classList.remove('is-recording');
+        this.fab!.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+        `;
     }
 
     highlightElement(xmin: number, xmax: number, ymin: number, ymax: number) {
@@ -235,16 +254,16 @@ export class UXIGuideUI {
             const listener = (_: PointerEvent) => {
                 callback();
                 element.removeEventListener("click", listener);
-                document.getElementById("uxiguide-next-button")?.remove();
+                document.getElementById("uxiguide-next-btn")?.remove();
             }
 
             if (element?.tagName !== "INPUT") element.addEventListener("click", listener);
             else {
                 const doneBtn = document.createElement('button');
-                doneBtn.id = "uxiguide-next-button";
-                doneBtn.innerHTML = 'DONE!'; // Or use an icon/text
-                element.insertAdjacentElement("afterend", doneBtn);
+                doneBtn.id = "uxiguide-next-btn";
+                doneBtn.innerHTML = "I've Done it, What's next?";
                 doneBtn.addEventListener('click', listener);
+                document.body.appendChild(doneBtn);
             }
         }
     }

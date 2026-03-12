@@ -63,6 +63,10 @@ export function connectWebsocket(
     websocket.onerror = onError;
 }
 
+export function closeWebsocket() {
+    websocket?.close();
+}
+
 export function sendMessage(message: string) {
     if (websocket && websocket.readyState === WebSocket.OPEN) {
         console.log(`Sending Text Message: ${message.substring(0, 30)}`);
