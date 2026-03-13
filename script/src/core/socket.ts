@@ -1,3 +1,5 @@
+import {getDomain} from "tldjs";
+
 let websocket: WebSocket | null = null;
 let reconnectAttempts = 0;
 const maxReconnectDelay = 30000; // Max 30 seconds
@@ -23,14 +25,14 @@ function startHeartbeat() {
     }, HEARTBEAT_TIMEOUT);
 }
 
-export function connectWebsocket(
+export async function connectWebsocket(
     onFunctionCalled: (name: string, response: any) => void,
     onConnectionClosed: () => void,
     showToast: (message: string, state: string) => void,
 ) {
-    // Connect websocket - TODO: define both userId and sessionId
-    const userId = "demo-user";
-    const sessionId = "demo-session-" + Math.random().toString(36).substring(7);
+    // Connect websocket
+    const userId = "user-" + await generateBrowserId();
+    const sessionId = "session-" + crypto.randomUUID();
     const ws_url = getWebSocketUrl(userId, sessionId);
     websocket = new WebSocket(ws_url);
 
@@ -89,7 +91,6 @@ export function connectWebsocket(
         const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), maxReconnectDelay);
         setTimeout(() => {
             reconnectAttempts++;
-            showToast(`Connection lost. Retrying in ${delay} seconds...`, "error");
             connectWebsocket(onFunctionCalled, onConnectionClosed, showToast);
         }, delay);
     };
@@ -176,4 +177,23 @@ function base64ToArray(base64: string) {
         bytes[i] = binaryString.charCodeAt(i);
     }
     return bytes.buffer;
+}
+
+// --------------------------------------------- Utilities
+async function generateBrowserId() {
+    const data = {
+        domain: getDomain(document.location.hostname),
+        screen: `${screen.width}x${screen.height}x${screen.colorDepth}`,
+        language: navigator.language,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        hardware: navigator.hardwareConcurrency
+    };
+
+    const stream = new TextEncoder().encode(JSON.stringify(data));
+    const hashBuffer = await crypto.subtle.digest('SHA-256', stream);
+
+    // Convert buffer to hex string
+    return Array.from(new Uint8Array(hashBuffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
 }
