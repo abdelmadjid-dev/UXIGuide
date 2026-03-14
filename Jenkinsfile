@@ -12,9 +12,8 @@ pipeline {
         // Pull GCP Secret File securely from Jenkins Credentials config
         GCP_CREDENTIALS = credentials('uxiguide-google-cloud-creds')
         
-        // Extract version from branch name, failing if not a release branch
-        RELEASE_VERSION = sh(script: "echo ${env.BRANCH_NAME} | sed 's/.*release\\/v//'", returnStdout: true).trim()
-        VERSION_TAG = "v${RELEASE_VERSION}"
+        // Pull Frontend Production Config from Jenkins Credentials
+        FRONTEND_PROD_CONFIG = credentials('uxiguide-frontend-prod-config')
     }
 
     stages {
@@ -40,6 +39,10 @@ pipeline {
                 sh '''
                 docker run --rm -v $(pwd):/app -w /app node:22-alpine sh -c "
                     if [ -d 'frontend' ]; then
+                        echo 'Injecting Production Environment...'
+                        mkdir -p frontend/src/environments
+                        echo \\"$FRONTEND_PROD_CONFIG\\" > frontend/src/environments/environment.ts
+                        
                         echo 'Building Frontend...'
                         cd frontend && npm install && npm run build && cd ..
                     fi &&
