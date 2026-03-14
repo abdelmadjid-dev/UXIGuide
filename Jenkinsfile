@@ -102,7 +102,7 @@ pipeline {
         always {
             script {
                 try {
-                    cleanWs()
+                    cleanWs(deleteDirs: true, disableDeferredWipeout: true)
                 } catch (Exception e) {
                     echo "Cleanup skipped: ${e.message}"
                 }
