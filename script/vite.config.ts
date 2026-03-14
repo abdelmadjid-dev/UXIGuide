@@ -6,7 +6,7 @@ export default {
         lib: {
             entry: './src/index.ts',
             name: 'UXIGuideScript',
-            fileName: () => `uxiguide.js`,
+            fileName: () => `widget.js`,
             formats: ['iife'] // best for simple <script src="..."> injection
         },
         rollupOptions: {

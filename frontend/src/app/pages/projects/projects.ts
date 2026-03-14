@@ -143,9 +143,9 @@ export class ProjectsPage implements OnInit, AfterViewInit {
     });
   }
 
-  copyApiKey(apiKey: string): void {
-    navigator.clipboard.writeText(apiKey).then(() => {
-      this.snackBar.open('API Key copied to clipboard!', 'OK', {
+  copyScriptTag(scriptTag: string): void {
+    navigator.clipboard.writeText(scriptTag).then(() => {
+      this.snackBar.open('Script tag copied to clipboard!', 'OK', {
         duration: 2000,
         horizontalPosition: 'end',
         verticalPosition: 'bottom',

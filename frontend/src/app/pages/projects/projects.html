@@ -72,15 +72,15 @@
               }
             </div>
 
-            <p class="domains-label" style="margin-top: 1rem;">API Key</p>
-            <div class="api-key-row">
-              <code class="api-key-value">{{ project.api_key }}</code>
+            <p class="domains-label" style="margin-top: 1rem;">Script Tag</p>
+            <div class="script-tag-row">
+              <code class="script-tag-value">{{ project.script_tag }}</code>
               <button
                 mat-icon-button
                 class="copy-btn"
-                (click)="copyApiKey(project.api_key)"
-                matTooltip="Copy API Key"
-                [id]="'copy-key-' + project.project_id"
+                (click)="copyScriptTag(project.script_tag)"
+                matTooltip="Copy Script Tag"
+                [id]="'copy-tag-' + project.project_id"
               >
                 <mat-icon>content_copy</mat-icon>
               </button>
