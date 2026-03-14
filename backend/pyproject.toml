@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "uxiguide_agent"
-version = "0.0.1"
+version = "0.1"
 description = "UXIGuide backend for Google ADK"
 authors = [
     "Abdessamad <abdessamad@belfodil.me>",
