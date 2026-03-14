@@ -40,13 +40,19 @@ pipeline {
 
         stage('Build Frontend & Script') {
             steps {
+                script {
+                    // Ensure the directory exists
+                    sh "mkdir -p frontend/src/environments"
+                    
+                    // Inject Production Environment (Safe rewrite using Jenkins DSL to keep quotes)
+                    writeFile file: "frontend/src/environments/environment.ts", text: env.FRONTEND_PROD_CONFIG
+                    
+                    // Inject Stub Development Environment (Required for resolution during build replacement)
+                    writeFile file: "frontend/src/environments/environment.development.ts", text: env.FRONTEND_PROD_CONFIG
+                }
                 sh '''
                 docker run --rm -v $(pwd):/app -w /app node:22-alpine sh -c "
                     if [ -d 'frontend' ]; then
-                        echo 'Injecting Production Environment...'
-                        mkdir -p frontend/src/environments
-                        echo \\"$FRONTEND_PROD_CONFIG\\" > frontend/src/environments/environment.ts
-                        
                         echo 'Building Frontend...'
                         cd frontend && npm install && npm run build && cd ..
                     fi &&
