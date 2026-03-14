@@ -182,8 +182,8 @@
   font-style: italic;
 }
 
-/* ── API Key Row ────────────────────────────────────────── */
-.api-key-row {
+/* ── Script Tag Row ────────────────────────────────────────── */
+.script-tag-row {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -193,7 +193,7 @@
   padding: 0.25rem 0.5rem;
 }
 
-.api-key-value {
+.script-tag-value {
   font-family: 'Roboto Mono', monospace;
   font-size: 0.75rem;
   color: var(--text-secondary);
