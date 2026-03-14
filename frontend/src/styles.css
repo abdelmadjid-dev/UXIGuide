@@ -1,0 +1,240 @@
+@import 'tailwindcss';
+
+/* ── CSS Custom Properties (Dark-first) ──────────────────── */
+:root {
+  --brand-primary: #4F46E5;
+  --brand-primary-light: #6366F1;
+  --brand-primary-dark: #3730A3;
+  --brand-accent: #06B6D4;
+
+  --surface-bg: #0F0F14;
+  --surface-card: #1A1A24;
+  --surface-card-hover: #22222E;
+  --surface-elevated: #252532;
+  --surface-dialog: #1E1E2A;
+
+  --text-primary: #F1F1F4;
+  --text-secondary: #9CA3AF;
+  --text-muted: #6B7280;
+
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.1);
+  --outline-color: rgba(255, 255, 255, 0.15);
+  --outline-hover: rgba(255, 255, 255, 0.3);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.4);
+
+  --scrollbar-thumb: rgba(255, 255, 255, 0.1);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.2);
+}
+
+/* ── Light Mode ──────────────────────────────────────────── */
+:root[data-theme='light'] {
+  --surface-bg: #F4F5F7;
+  --surface-card: #FFFFFF;
+  --surface-card-hover: #F0F0F5;
+  --surface-elevated: #FFFFFF;
+  --surface-dialog: #FFFFFF;
+
+  --text-primary: #1A1A2E;
+  --text-secondary: #4B5563;
+  --text-muted: #9CA3AF;
+
+  --border-subtle: rgba(0, 0, 0, 0.06);
+  --border-default: rgba(0, 0, 0, 0.12);
+  --outline-color: rgba(0, 0, 0, 0.2);
+  --outline-hover: rgba(0, 0, 0, 0.35);
+
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.12);
+
+  --scrollbar-thumb: rgba(0, 0, 0, 0.15);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.25);
+}
+
+/* ── Base Reset ──────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--surface-bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Angular Material M3 Overrides ───────────────────────── */
+
+/* Global form field contrast */
+.mat-mdc-form-field {
+  --mdc-outlined-text-field-label-text-color: var(--text-secondary);
+  --mdc-outlined-text-field-input-text-color: var(--text-primary);
+  --mdc-outlined-text-field-outline-color: var(--outline-color);
+  --mdc-outlined-text-field-hover-outline-color: var(--outline-hover);
+  --mdc-outlined-text-field-focus-outline-color: var(--brand-primary-light);
+  --mdc-outlined-text-field-focus-label-text-color: var(--brand-primary-light);
+}
+
+/* Ensure native input text is visible and has padding */
+.mat-mdc-form-field input.mat-mdc-input-element,
+.mat-mdc-form-field textarea.mat-mdc-input-element {
+  color: var(--text-primary) !important;
+  caret-color: var(--brand-primary-light) !important;
+  padding: 0 12px !important; /* Fix: text hugging left border */
+}
+
+/* Fix: chips hugging left border */
+.mat-mdc-form-field .mat-mdc-chip-grid {
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+}
+
+/* Adjust label positioning to match internal padding */
+.mat-mdc-form-field.mat-form-field-appearance-outline .mdc-notched-outline__notch {
+  padding-left: 12px !important;
+}
+
+/* Fix: Only show placeholder when focused or has content (label is floating) */
+.mat-mdc-form-field input::placeholder,
+.mat-mdc-form-field textarea::placeholder {
+  color: var(--text-muted) !important;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.mat-mdc-form-field.mat-focused input::placeholder,
+.mat-mdc-form-field.mat-focused textarea::placeholder,
+.mat-mdc-form-field.mat-form-field-should-float input::placeholder,
+.mat-mdc-form-field.mat-form-field-should-float textarea::placeholder {
+  opacity: 1;
+}
+
+/* Add space for floating labels to prevent cropping */
+.mat-mdc-form-field {
+  margin-top: 8px;
+}
+
+/* Ensure selected text is also visible */
+.mat-mdc-form-field input::selection,
+.mat-mdc-form-field textarea::selection {
+  background-color: var(--brand-primary-dark);
+  color: #fff;
+}
+
+/* Fix browser autofill styling for dark mode */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--text-primary) !important;
+  -webkit-box-shadow: 0 0 0px 1000px var(--surface-bg) inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Specific fix for dialog inputs where background might be different */
+.mat-mdc-dialog-container input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0px 1000px var(--surface-dialog) inset !important;
+}
+
+.mat-mdc-card {
+  --mdc-elevated-card-container-color: var(--surface-card) !important;
+  border-radius: var(--radius-md) !important;
+  border: 1px solid var(--border-subtle);
+}
+
+.mat-mdc-dialog-container .mdc-dialog__surface {
+  background-color: var(--surface-dialog) !important;
+  border-radius: var(--radius-lg) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Dialog form field overrides for dark mode contrast */
+.mat-mdc-dialog-container .mat-mdc-form-field {
+  --mdc-outlined-text-field-label-text-color: var(--text-secondary);
+  --mdc-outlined-text-field-input-text-color: var(--text-primary);
+  --mdc-outlined-text-field-outline-color: var(--outline-color);
+  --mdc-outlined-text-field-hover-outline-color: var(--outline-hover);
+  --mdc-outlined-text-field-focus-outline-color: var(--brand-primary-light);
+  --mdc-outlined-text-field-focus-label-text-color: var(--brand-primary-light);
+  overflow: visible !important;
+}
+
+.mat-mdc-form-field [matSuffix] {
+  color: var(--text-secondary) !important;
+}
+
+.mat-mdc-dialog-container .mat-mdc-floating-label {
+  color: var(--text-secondary) !important;
+}
+
+.mat-mdc-dialog-container .mdc-text-field--outlined .mdc-notched-outline__leading,
+.mat-mdc-dialog-container .mdc-text-field--outlined .mdc-notched-outline__trailing,
+.mat-mdc-dialog-container .mdc-text-field--outlined .mdc-notched-outline__notch {
+  border-color: var(--outline-color) !important;
+}
+
+.mat-mdc-dialog-container .mat-mdc-chip {
+  --mdc-chip-label-text-color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.mat-mdc-dialog-container h2,
+.mat-mdc-dialog-container p,
+.mat-mdc-dialog-container label,
+.mat-mdc-dialog-container span {
+  color: var(--text-primary);
+}
+
+.mat-mdc-dialog-container .mat-mdc-button {
+  color: var(--text-secondary) !important;
+}
+
+.mat-toolbar {
+  background-color: transparent !important;
+  color: var(--text-primary) !important;
+}
+
+/* Sidebar override */
+.mat-drawer {
+  background-color: var(--surface-card) !important;
+  border-right: 1px solid var(--border-subtle) !important;
+  color: var(--text-primary) !important;
+}
+
+.mat-mdc-fab, .mat-mdc-mini-fab {
+  --mdc-fab-container-color: var(--brand-primary) !important;
+}
+
+/* ── Scrollbar Styling ───────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* ── Utility Classes ─────────────────────────────────────── */
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+}

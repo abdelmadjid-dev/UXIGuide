@@ -1,0 +1,53 @@
+.dialog-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.dialog-title-icon {
+  color: var(--brand-primary-light);
+}
+
+.dialog-content {
+  padding-top: 0 !important;
+  min-width: 400px;
+  overflow: visible !important;
+  /* Prevent label cropping */
+}
+
+/* Push the first form field down to give space for the floating label below the title */
+.dialog-content mat-form-field:first-child {
+  margin-top: 1.5rem !important;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.domains-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 0.25rem;
+  display: block;
+}
+
+.domains-hint {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin: 0 0 0.75rem;
+}
+
+.dialog-actions {
+  padding: 0.75rem 1.5rem 1rem;
+}
+
+.create-action-btn {
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-light)) !important;
+  color: #fff !important;
+  border-radius: var(--radius-sm) !important;
+  font-weight: 600 !important;
+}
