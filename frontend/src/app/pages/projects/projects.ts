@@ -14,6 +14,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { AuthService } from '../../core/services/auth.service';
 import { ProjectService } from '../../core/services/project.service';
 import { Project } from '../../core/models/project.model';
@@ -33,6 +34,7 @@ import { take } from 'rxjs';
     MatChipsModule,
     MatDialogModule,
     MatSnackBarModule,
+    MatTooltipModule,
   ],
   templateUrl: './projects.html',
   styleUrl: './projects.css',
@@ -138,6 +140,16 @@ export class ProjectsPage implements OnInit, AfterViewInit {
           verticalPosition: 'bottom',
         });
       }
+    });
+  }
+
+  copyApiKey(apiKey: string): void {
+    navigator.clipboard.writeText(apiKey).then(() => {
+      this.snackBar.open('API Key copied to clipboard!', 'OK', {
+        duration: 2000,
+        horizontalPosition: 'end',
+        verticalPosition: 'bottom',
+      });
     });
   }
 }

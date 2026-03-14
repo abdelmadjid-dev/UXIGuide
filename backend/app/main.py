@@ -15,6 +15,10 @@ from google.genai import types
 from starlette.responses import FileResponse
 from starlette.staticfiles import StaticFiles
 
+import firebase_admin
+from firebase_admin import firestore
+from google.cloud.firestore_v1.base_query import FieldFilter
+
 from app.agent import agent
 
 # Configure logging
@@ -32,6 +36,13 @@ APP_NAME = "uxiguide-agent"
 # ========================================
 # Application Initialization (once at startup)
 # ========================================
+
+# Initialize Firebase Admin SDK
+try:
+    firebase_app = firebase_admin.get_app()
+except ValueError:
+    firebase_app = firebase_admin.initialize_app()
+db = firestore.client()
 
 app = FastAPI()
 
@@ -58,8 +69,64 @@ async def root():
 # WebSocket Endpoint
 # ========================================
 
-@app.websocket("/ws/{user_id}/{session_id}")
-async def websocket_endpoint(websocket: WebSocket, user_id: str, session_id: str) -> None:
+@app.websocket("/v0.1/interact/{user_id}/{session_id}")
+async def websocket_endpoint(websocket: WebSocket, user_id: str, session_id: str, api_key: str | None = None) -> None:
+    # 0. Check for API Key in query params if not found in path (safety)
+    if not api_key:
+        api_key = websocket.query_params.get("api_key")
+        
+    if not api_key:
+        logger.warning(f"Rejected WS connection: Missing API Key for user {user_id}")
+        await websocket.close(code=1008, reason="Missing API Key")
+        return
+
+    # 1. Extract and sanitize Origin
+    origin = websocket.headers.get("origin")
+    domain = ""
+    if origin:
+        domain = origin.replace("https://", "").replace("http://", "").rstrip("/")
+        
+    if not domain:
+        logger.warning(f"Rejected WS connection: Missing Origin header for API Key {api_key}")
+        await websocket.close(code=1008, reason="Missing Origin header")
+        return
+        
+    # 2. Fetch project by api_key field and validate domain
+    def _get_project_data():
+        logger.info(f"Querying Firestore for api_key: '{api_key}'")
+        projects_ref = db.collection("projects")
+        query = projects_ref.where(filter=FieldFilter("api_key", "==", api_key)).limit(1)
+        # Use .get() instead of .stream() for easier results handling
+        results = query.get(timeout=5.0)
+        if not results:
+            logger.warning(f"No Firestore project found with api_key: '{api_key}'")
+            return None
+        data = results[0].to_dict()
+        logger.info(f"Found project: {data.get('name')} (ID: {results[0].id})")
+        return data
+
+    try:
+        project_data = await asyncio.to_thread(_get_project_data)
+    except Exception as e:
+        logger.error(f"Internal error authorizing API Key {api_key}: {e}")
+        await websocket.close(code=1011, reason="Internal Server Error")
+        return
+
+    if not project_data:
+        logger.warning(f"Rejected WS connection: API Key {api_key} not found in database")
+        await websocket.close(code=1008, reason="Invalid API Key")
+        return
+
+    # 3. Validate Origin against the project's whitelisted domain
+    whitelisted_domain = project_data.get("whitelisted_domain", "")
+    logger.info(f"Comparing requested domain '{domain}' against whitelist '{whitelisted_domain}'")
+    
+    if domain != whitelisted_domain:
+        logger.warning(f"Rejected WS connection: Domain '{domain}' != '{whitelisted_domain}'")
+        await websocket.close(code=1008, reason="Unauthorized Domain")
+        return
+
+    logger.info(f"Authorized connection for API Key {api_key} (Domain: {domain})")
     await websocket.accept()
 
     # Build RunConfig with optional proactivity and affective dialog

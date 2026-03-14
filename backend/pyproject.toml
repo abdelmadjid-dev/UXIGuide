@@ -1,20 +1,21 @@
-[project]
+[tool.poetry]
 name = "uxiguide_agent"
 version = "0.0.1"
 description = "UXIGuide backend for Google ADK"
 authors = [
-    {name = "Abdessamad",email = "abdessamad@belfodil.me"},
-    {name = "Abdelmadjid",email = "abdelmadjid.dev@gmail.com"}
+    "Abdessamad <abdessamad@belfodil.me>",
+    "Abdelmadjid <abdelmadjid.dev@gmail.com>"
 ]
 readme = "README.md"
-requires-python = ">=3.14,<4.0"
 
 [tool.poetry.dependencies]
+python = ">=3.10,<4.0"
 google-adk =">=1.26.0,<2.0.0"
-asyncio = ">=4.0.0,<5.0.0"
 fastapi = ">=0.135.1,<0.136.0"
 python-dotenv = ">=1.0.0"
 uvicorn = {extras = ["standard"], version = "^0.41.0"}
+firebase-admin = ">=6.5.0"
+websockets = ">=10.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

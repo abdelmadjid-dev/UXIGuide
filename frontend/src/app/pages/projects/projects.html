@@ -71,6 +71,20 @@
                 <span class="no-domains">No domain configured</span>
               }
             </div>
+
+            <p class="domains-label" style="margin-top: 1rem;">API Key</p>
+            <div class="api-key-row">
+              <code class="api-key-value">{{ project.api_key }}</code>
+              <button
+                mat-icon-button
+                class="copy-btn"
+                (click)="copyApiKey(project.api_key)"
+                matTooltip="Copy API Key"
+                [id]="'copy-key-' + project.project_id"
+              >
+                <mat-icon>content_copy</mat-icon>
+              </button>
+            </div>
           </mat-card-content>
 
           <mat-card-actions align="end">
