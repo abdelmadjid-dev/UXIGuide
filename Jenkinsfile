@@ -36,29 +36,18 @@ pipeline {
         }
 
         stage('Build Frontend & Script') {
-            agent {
-                docker {
-                    image 'node:20-alpine'
-                    reuseNode true
-                }
-            }
             steps {
                 sh '''
-                if [ -d "frontend" ]; then
-                    cd frontend
-                    npm ci || npm install
-                    npm run build
-                    cd ..
-                fi
-                '''
-                
-                sh '''
-                if [ -d "script" ]; then
-                    cd script
-                    npm ci || npm install
-                    npm run build
-                    cd ..
-                fi
+                docker run --rm -v $(pwd):/app -w /app node:20-alpine sh -c "
+                    if [ -d 'frontend' ]; then
+                        echo 'Building Frontend...'
+                        cd frontend && npm install && npm run build && cd ..
+                    fi &&
+                    if [ -d 'script' ]; then
+                        echo 'Building Widget Script...'
+                        cd script && npm install && npm run build && cd ..
+                    fi
+                "
                 '''
             }
         }
