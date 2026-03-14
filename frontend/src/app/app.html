@@ -1,0 +1,81 @@
+@if (isLoginPage()) {
+  <router-outlet />
+} @else {
+  <mat-sidenav-container class="dashboard-container">
+    <!-- Sidebar -->
+    <mat-sidenav mode="side" opened class="sidebar" id="main-sidebar">
+      <div class="sidebar-inner" #sidebarContent>
+        <!-- Brand -->
+        <div class="sidebar-brand">
+          <div class="sidebar-logo">
+            <mat-icon>smart_toy</mat-icon>
+          </div>
+          <span class="sidebar-title">UXIGuide</span>
+        </div>
+
+        <!-- Navigation -->
+        <mat-nav-list class="sidebar-nav">
+          @for (item of navItems; track item.route) {
+            <a
+              mat-list-item
+              [routerLink]="item.route"
+              routerLinkActive="active-link"
+              class="nav-item"
+              [id]="'nav-' + item.label.toLowerCase().replace(' ', '-')"
+            >
+              <mat-icon matListItemIcon class="nav-icon">{{ item.icon }}</mat-icon>
+              <span matListItemTitle class="nav-label">{{ item.label }}</span>
+            </a>
+          }
+        </mat-nav-list>
+
+        <!-- Spacer -->
+        <div class="sidebar-spacer"></div>
+
+        <!-- User Section -->
+        <div class="sidebar-user">
+          <div class="user-avatar">{{ userInitial() }}</div>
+          <div class="user-info">
+            <span class="user-email">{{ userEmail() }}</span>
+          </div>
+          <button
+            mat-icon-button
+            (click)="logout()"
+            matTooltip="Sign out"
+            class="logout-btn"
+            id="logout-btn"
+          >
+            <mat-icon>logout</mat-icon>
+          </button>
+        </div>
+      </div>
+    </mat-sidenav>
+
+    <!-- Main Content -->
+    <mat-sidenav-content class="main-content">
+      <!-- Header -->
+      <mat-toolbar class="header">
+        <div class="header-left">
+          <h1 class="page-title">Dashboard</h1>
+        </div>
+        <div class="header-right">
+          <button
+            mat-icon-button
+            (click)="toggleTheme()"
+            [matTooltip]="themeService.currentTheme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+            class="theme-toggle-btn"
+            id="theme-toggle-btn"
+          >
+            <mat-icon>{{ themeService.currentTheme() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
+          </button>
+          <span class="version-badge">v1.0</span>
+        </div>
+      </mat-toolbar>
+
+      <!-- Page Content -->
+      <div class="page-content">
+        <router-outlet />
+      </div>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
+}

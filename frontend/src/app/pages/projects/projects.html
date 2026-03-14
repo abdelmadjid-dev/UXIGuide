@@ -1,0 +1,100 @@
+<div class="projects-page">
+  <!-- Page Header -->
+  <div class="page-header" #pageHeader>
+    <div class="header-text">
+      <h2 class="section-title">Projects</h2>
+      <p class="section-subtitle">Manage your UXIGuide-enabled applications and their whitelisted domains.</p>
+    </div>
+    <button
+      mat-fab
+      extended
+      class="create-btn"
+      (click)="openCreateDialog()"
+      id="create-project-btn"
+    >
+      <mat-icon>add</mat-icon>
+      New Project
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="loading-skeleton"></div>
+      <div class="loading-skeleton"></div>
+      <div class="loading-skeleton"></div>
+    </div>
+  } @else if (projects().length === 0) {
+    <!-- Empty State -->
+    <div class="empty-state">
+      <div class="empty-icon">
+        <mat-icon>folder_off</mat-icon>
+      </div>
+      <h3 class="empty-title">No projects yet</h3>
+      <p class="empty-text">Create your first project to start integrating UXIGuide into your application.</p>
+      <button
+        mat-stroked-button
+        (click)="openCreateDialog()"
+        class="empty-cta"
+        id="create-first-project-btn"
+      >
+        <mat-icon>add</mat-icon>
+        Create Project
+      </button>
+    </div>
+  } @else {
+    <!-- Project Grid -->
+    <div class="project-grid" #projectGrid>
+      @for (project of projects(); track project.project_id) {
+        <mat-card class="project-card" [id]="'project-' + project.project_id">
+          <mat-card-header>
+            <div class="card-icon" mat-card-avatar>
+              <mat-icon>web</mat-icon>
+            </div>
+            <mat-card-title class="card-title">{{ project.name }}</mat-card-title>
+            <mat-card-subtitle class="card-date">
+              Created {{ getProjectDate(project.created_at) | date:'mediumDate' }}
+            </mat-card-subtitle>
+          </mat-card-header>
+
+          <mat-card-content>
+            <p class="domains-label">Whitelisted Domain</p>
+            <div class="domains-chips">
+              @if (project.whitelisted_domain) {
+                <mat-chip-set>
+                  <mat-chip class="domain-chip">
+                    <mat-icon matChipAvatar>language</mat-icon>
+                    {{ project.whitelisted_domain }}
+                  </mat-chip>
+                </mat-chip-set>
+              } @else {
+                <span class="no-domains">No domain configured</span>
+              }
+            </div>
+          </mat-card-content>
+
+          <mat-card-actions align="end">
+            <button
+              mat-icon-button
+              color="primary"
+              (click)="openEditDialog(project)"
+              matTooltip="Edit project"
+              [id]="'edit-' + project.project_id"
+            >
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button
+              mat-icon-button
+              color="warn"
+              (click)="deleteProject(project)"
+              matTooltip="Delete project"
+              [id]="'delete-' + project.project_id"
+            >
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+          </mat-card-actions>
+        </mat-card>
+      }
+    </div>
+  }
+</div>
