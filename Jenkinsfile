@@ -36,6 +36,12 @@ pipeline {
         }
 
         stage('Build Frontend & Script') {
+            agent {
+                docker {
+                    image 'node:20-alpine'
+                    reuseNode true
+                }
+            }
             steps {
                 sh '''
                 if [ -d "frontend" ]; then
