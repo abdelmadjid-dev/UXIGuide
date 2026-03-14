@@ -181,3 +181,44 @@
   color: var(--text-muted);
   font-style: italic;
 }
+
+/* ── API Key Row ────────────────────────────────────────── */
+.api-key-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem 0.5rem;
+}
+
+.api-key-value {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.copy-btn {
+  flex-shrink: 0;
+  width: 32px !important;
+  height: 32px !important;
+  line-height: 32px !important;
+}
+
+.copy-btn mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+  transition: color 0.2s;
+}
+
+.copy-btn:hover mat-icon {
+  color: var(--brand-primary-light);
+}

@@ -29,7 +29,7 @@ export class ProjectService {
     });
   }
 
-  /** Creates a new project document in Firestore. */
+  /** Creates a new project document in Firestore with a unique API key. */
   async createProject(uid: string, name: string, domain: string): Promise<void> {
     await runInInjectionContext(this.injector, () => {
       const ref = collection(this.firestore, this.collectionName);
@@ -37,6 +37,7 @@ export class ProjectService {
         client_uid: uid,
         name,
         created_at: serverTimestamp(),
+        api_key: crypto.randomUUID(),
         widget_config: {
           theme_color: '#4F46E5',
           persona: 'Professional and concise',

@@ -3,6 +3,7 @@ export interface Project {
   client_uid: string;
   name: string;
   created_at: any; // Firestore Timestamp or Date
+  api_key: string;
   widget_config: {
     theme_color: string;
     persona: string;
