@@ -1,4 +1,5 @@
 import {getDomain} from "tldjs";
+import {Config} from "../common/config.types.ts";
 
 let websocket: WebSocket | null = null;
 let reconnectAttempts = 0;
@@ -6,15 +7,29 @@ const maxReconnectDelay = 30000; // Max 30 seconds
 let heartbeatTimer: number | undefined = undefined;
 const HEARTBEAT_TIMEOUT = 10000; // 10 seconds
 
-// Build WebSocket URL with RunConfig options as query parameters
-function getWebSocketUrl(userId: string, sessionId: string) {
-    // Use wss:// for HTTPS pages, ws:// for HTTP (localhost development)
-    const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const baseUrl = wsProtocol + "//" + "localhost:8080" + "/ws/" + userId + "/" + sessionId;
-    const params = new URLSearchParams();
+// Build WebSocket URL with api_key authorization
+function getWebSocketUrl(config: Config, userId: string, sessionId: string) {
+    // Strip trailing slash from endpoint
+    const endpoint = config.endpoint.replace(/\/+$/, '');
 
-    const queryString = params.toString();
-    return queryString ? baseUrl + "?" + queryString : baseUrl;
+    // Determine ws/wss protocol from the endpoint
+    let wsBase: string;
+    if (endpoint.startsWith('http://')) {
+        wsBase = 'ws://' + endpoint.slice(7);
+    } else if (endpoint.startsWith('https://')) {
+        wsBase = 'wss://' + endpoint.slice(8);
+    } else if (endpoint.startsWith('ws://') || endpoint.startsWith('wss://')) {
+        wsBase = endpoint;
+    } else {
+        // Default: infer from page protocol
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        wsBase = wsProtocol + '//' + endpoint;
+    }
+
+    const params = new URLSearchParams();
+    params.set('api_key', config.apiKey);
+
+    return `${wsBase}/interact/${userId}/${sessionId}?${params.toString()}`;
 }
 
 function startHeartbeat() {
@@ -26,6 +41,7 @@ function startHeartbeat() {
 }
 
 export async function connectWebsocket(
+    config: Config,
     onFunctionCalled: (name: string, response: any) => void,
     onConnectionClosed: () => void,
     showToast: (message: string, state: string) => void,
@@ -33,7 +49,7 @@ export async function connectWebsocket(
     // Connect websocket
     const userId = "user-" + await generateBrowserId();
     const sessionId = "session-" + crypto.randomUUID();
-    const ws_url = getWebSocketUrl(userId, sessionId);
+    const ws_url = getWebSocketUrl(config, userId, sessionId);
     websocket = new WebSocket(ws_url);
 
     websocket.onopen = () => {
@@ -91,7 +107,7 @@ export async function connectWebsocket(
         const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), maxReconnectDelay);
         setTimeout(() => {
             reconnectAttempts++;
-            connectWebsocket(onFunctionCalled, onConnectionClosed, showToast);
+            connectWebsocket(config, onFunctionCalled, onConnectionClosed, showToast);
         }, delay);
     };
     websocket.onerror = (_: Event) => {

@@ -18,6 +18,10 @@ class UXIGuideScript {
             console.error('UXIGuideScript: Missing API Key');
             throw new Error('API Key is required');
         }
+        if (!config.endpoint) {
+            console.error('UXIGuideScript: Missing endpoint');
+            throw new Error('Endpoint is required');
+        }
 
         this.apiKey = config.apiKey;
         this.config = {
@@ -60,6 +64,7 @@ class UXIGuideScript {
 
         // Initialize Websocket
         connectWebsocket(
+            this.config,
             async (name: string, response: any) => {
                 switch (name) {
                     case "dispatch_next_action":
@@ -77,11 +82,32 @@ class UXIGuideScript {
 
         this.isInitialized = true;
     }
+    /**
+     * Factory: auto-initialize from <script> tag data attributes.
+     * Usage: <script src="uxiguide.js" data-api-key="..." data-endpoint="wss://..."></script>
+     */
+    static fromScript(): UXIGuideScript | null {
+        const scriptEl = document.currentScript as HTMLScriptElement | null;
+        if (!scriptEl) return null;
+
+        const apiKey = scriptEl.getAttribute('data-api-key');
+        const endpoint = scriptEl.getAttribute('data-endpoint');
+
+        if (!apiKey || !endpoint) {
+            console.warn('UXIGuide: Missing data-api-key or data-endpoint on <script> tag. Skipping auto-init.');
+            return null;
+        }
+
+        return new UXIGuideScript({ apiKey, endpoint });
+    }
 }
 
 // Attach to window for CDN usage
 (window as any).UXIGuide = {
     Loader: UXIGuideScript
 };
+
+// Auto-initialize if data attributes are present on the script tag
+UXIGuideScript.fromScript();
 
 export default UXIGuideScript;
