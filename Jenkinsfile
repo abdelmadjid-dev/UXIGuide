@@ -1,5 +1,9 @@
 pipeline {
     agent any
+    options {
+        skipDefaultCheckout()
+        timeout(time: 1, unit: 'HOURS')
+    }
 
     environment {
         // Assume GCP credentials are bound to the Jenkins server host
@@ -12,29 +16,38 @@ pipeline {
         // Pull GCP Secret File securely from Jenkins Credentials config
         GCP_CREDENTIALS = credentials('uxiguide-google-cloud-creds')
         
-        // Extract version from branch name, failing if not a release branch
-        RELEASE_VERSION = sh(script: "echo ${env.BRANCH_NAME} | sed 's/.*release\\/v//'", returnStdout: true).trim()
-        VERSION_TAG = "v${RELEASE_VERSION}"
-        
         // Pull Frontend Production Config from Jenkins Credentials
         FRONTEND_PROD_CONFIG = credentials('uxiguide-frontend-prod-config')
+
+        // Dynamics set in Initialize stage
+        RELEASE_VERSION = ""
+        VERSION_TAG = ""
     }
 
     stages {
-        // Enforce pipeline only runs on release branches
-        stage('Check Branch') {
+        stage('Nuclear Workspace Clean') {
             steps {
                 script {
-                    if (!env.BRANCH_NAME.startsWith('release/')) {
-                        error("Pipeline is configured to run ONLY on 'release/*' branches. Current branch: ${env.BRANCH_NAME}")
-                    }
+                    echo "Layer 1: Standard Jenkins Cleanup..."
+                    deleteDir()
+                    
+                    echo "Layer 2: Docker Nuclear Wipe (for root-owned files)..."
+                    // Small fallback: if deleteDir missed anything (like root folders), Docker kills it
+                    sh "docker run --rm -v \$(pwd):/app -w /app alpine sh -c 'rm -rf ./* ./.[!.]* ./.??* 2>/dev/null || true'"
                 }
-            }
-        }
-
-        stage('Checkout') {
-            steps {
+                
+                echo "Workspace pristine. Proceeding to checkout..."
                 checkout scm
+                
+                script {
+                    if (!env.BRANCH_NAME.startsWith('release/v')) {
+                        error("Pipeline is configured to run ONLY on 'release/v*' branches. Current branch: ${env.BRANCH_NAME}")
+                    }
+                    // Extract version after checkout is confirmed
+                    env.RELEASE_VERSION = sh(script: "echo ${env.BRANCH_NAME} | sed 's/.*release\\/v//'", returnStdout: true).trim()
+                    env.VERSION_TAG = "v${env.RELEASE_VERSION}"
+                    echo "Initializing build for ${env.VERSION_TAG} on project ${env.GCP_PROJECT_ID}"
+                }
             }
         }
 
