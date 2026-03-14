@@ -42,6 +42,31 @@ class PCMPlayerProcessor extends AudioWorkletProcessor {
       }
     }
   }
+
+  // The system calls `process()` ~128 samples at a time (depending on the browser).
+  // We fill the output buffers from our ring buffer.
+  process(inputs, outputs, parameters) {
+
+    // Write a frame to the output
+    const output = outputs[0];
+    const framesPerBlock = output[0].length;
+    for (let frame = 0; frame < framesPerBlock; frame++) {
+
+      // Write the sample(s) into the output buffer
+      output[0][frame] = this.buffer[this.readIndex]; // left channel
+      if (output.length > 1) {
+        output[1][frame] = this.buffer[this.readIndex]; // right channel
+      }
+
+      // Move the read index forward unless underflowing
+      if (this.readIndex !== this.writeIndex) {
+        this.readIndex = (this.readIndex + 1) % this.bufferSize;
+      }
+    }
+
+    // Returning true tells the system to keep the processor alive
+    return true;
+  }
 }
 
 registerProcessor('pcm-player-processor', PCMPlayerProcessor);
