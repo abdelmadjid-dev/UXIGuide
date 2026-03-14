@@ -18,10 +18,6 @@ pipeline {
         
         // Pull Frontend Production Config from Jenkins Credentials
         FRONTEND_PROD_CONFIG = credentials('uxiguide-frontend-prod-config')
-
-        // Dynamics set in Initialize stage
-        RELEASE_VERSION = ""
-        VERSION_TAG = ""
     }
 
     stages {
@@ -43,9 +39,11 @@ pipeline {
                     if (!env.BRANCH_NAME.startsWith('release/v')) {
                         error("Pipeline is configured to run ONLY on 'release/v*' branches. Current branch: ${env.BRANCH_NAME}")
                     }
-                    // Pure Groovy extraction (avoids shell pipe issues)
-                    env.RELEASE_VERSION = env.BRANCH_NAME.replaceAll(/.*release\/v/, '')
+                    // Robust extraction (splits by / and takes the last part, then removes 'v')
+                    def branchVersion = env.BRANCH_NAME.split('/')[-1]
+                    env.RELEASE_VERSION = branchVersion.replace('v', '')
                     env.VERSION_TAG = "v${env.RELEASE_VERSION}"
+                    
                     echo "Initializing build for ${env.VERSION_TAG} on project ${env.GCP_PROJECT_ID}"
                 }
             }
@@ -67,7 +65,7 @@ pipeline {
                 docker run --rm -v $(pwd):/app -w /app node:22-alpine sh -c "
                     if [ -d 'frontend' ]; then
                         echo 'Building Frontend...'
-                        cd frontend && npm install && npm run build -- --optimization.fonts.inline=false && cd ..
+                        cd frontend && npm install && npm run build && cd ..
                     fi &&
                     if [ -d 'script' ]; then
                         echo 'Building Widget Script...'
