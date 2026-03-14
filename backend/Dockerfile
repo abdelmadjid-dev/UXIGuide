@@ -10,7 +10,7 @@ RUN pip install --no-cache-dir poetry
 
 # Install dependencies
 COPY pyproject.toml poetry.lock ./
-RUN poetry install --no-root --without dev
+RUN poetry install --no-root
 
 # Copy backend code
 COPY . .
