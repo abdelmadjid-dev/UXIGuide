@@ -28,12 +28,12 @@ pipeline {
         stage('Nuclear Workspace Clean') {
             steps {
                 script {
-                    echo "Layer 1: Standard Jenkins Cleanup..."
-                    deleteDir()
-                    
-                    echo "Layer 2: Docker Nuclear Wipe (for root-owned files)..."
-                    // Small fallback: if deleteDir missed anything (like root folders), Docker kills it
+                    echo "Layer 1: Docker Nuclear Wipe (Force root cleanup)..."
+                    // Docker runs as root by default, can delete ANYTHING in the mount
                     sh "docker run --rm -v \$(pwd):/app -w /app alpine sh -c 'rm -rf ./* ./.[!.]* ./.??* 2>/dev/null || true'"
+                    
+                    echo "Layer 2: Standard Jenkins Cleanup..."
+                    deleteDir()
                 }
                 
                 echo "Workspace pristine. Proceeding to checkout..."
