@@ -13,7 +13,7 @@ pipeline {
         GCP_CREDENTIALS = credentials('uxiguide-google-cloud-creds')
         
         // Extract version from branch name, failing if not a release branch
-        RELEASE_VERSION = sh(script: "echo ${env.BRANCH_NAME} | grep -oP '(?<=release/v)[0-9]+'", returnStdout: true).trim()
+        RELEASE_VERSION = sh(script: "echo ${env.BRANCH_NAME} | sed 's|.*/v||'", returnStdout: true).trim()
         VERSION_TAG = "v${RELEASE_VERSION}"
     }
 
@@ -92,7 +92,9 @@ pipeline {
 
     post {
         always {
-            cleanWs()
+            node {
+                cleanWs()
+            }
         }
     }
 }
