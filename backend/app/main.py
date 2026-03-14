@@ -60,10 +60,14 @@ runner = Runner(app_name=APP_NAME, agent=agent, session_service=session_service)
 # HTTP Endpoints
 # ========================================
 
-@app.get("/")
-async def root():
-    """Serve the index.html page."""
-    return FileResponse(Path(__file__).parent / "static" / "index.html")
+@app.get("/v0.1/widget.js")
+async def serve_widget():
+    """Serve the built widget script."""
+    widget_path = Path(__file__).parent.parent.parent / "script" / "dist" / "widget.js"
+    if not widget_path.exists():
+        # Fallback for dev if not built yet
+        return {"error": "widget.js not found. Please run 'npm run build' in the /script directory."}
+    return FileResponse(widget_path)
 
 # ========================================
 # WebSocket Endpoint
