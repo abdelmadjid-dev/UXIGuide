@@ -38,7 +38,7 @@ pipeline {
         stage('Build Frontend & Script') {
             steps {
                 sh '''
-                docker run --rm -v $(pwd):/app -w /app node:20-alpine sh -c "
+                docker run --rm -v $(pwd):/app -w /app node:22-alpine sh -c "
                     if [ -d 'frontend' ]; then
                         echo 'Building Frontend...'
                         cd frontend && npm install && npm run build && cd ..
