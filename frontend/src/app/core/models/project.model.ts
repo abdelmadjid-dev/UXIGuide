@@ -4,7 +4,7 @@ export interface Project {
   name: string;
   created_at: any; // Firestore Timestamp or Date
   api_key: string;
-  script_tag: string;
+  script_tag?: string;
   widget_config: {
     theme_color: string;
     persona: string;

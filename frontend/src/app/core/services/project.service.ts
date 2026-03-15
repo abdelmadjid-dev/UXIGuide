@@ -35,10 +35,6 @@ export class ProjectService {
   /** Creates a new project document in Firestore with a unique API key and prefilled script tag. */
   async createProject(uid: string, name: string, domain: string): Promise<void> {
     const apiKey = crypto.randomUUID();
-    const cdnBase = this.configService.cdnBaseUrl;
-    const apiEndpoint = this.configService.apiEndpoint;
-    const version = environment.apiVersion;
-    const scriptTag = `<script src="${cdnBase}/${version}/widget.js" data-api-key="${apiKey}" data-endpoint="${apiEndpoint}/${version}"></script>`;
 
     await runInInjectionContext(this.injector, () => {
       const ref = collection(this.firestore, this.collectionName);
@@ -47,7 +43,6 @@ export class ProjectService {
         name,
         created_at: serverTimestamp(),
         api_key: apiKey,
-        script_tag: scriptTag,
         widget_config: {
           theme_color: '#4F46E5',
           persona: 'Professional and concise',

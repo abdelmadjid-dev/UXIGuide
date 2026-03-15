@@ -74,11 +74,11 @@
 
             <p class="domains-label" style="margin-top: 1rem;">Script Tag</p>
             <div class="script-tag-row">
-              <code class="script-tag-value">{{ project.script_tag }}</code>
+              <code class="script-tag-value">{{ getScriptTag(project) }}</code>
               <button
                 mat-icon-button
                 class="copy-btn"
-                (click)="copyScriptTag(project.script_tag)"
+                (click)="copyScriptTag(getScriptTag(project))"
                 matTooltip="Copy Script Tag"
                 [id]="'copy-tag-' + project.project_id"
               >

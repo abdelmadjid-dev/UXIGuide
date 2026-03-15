@@ -18,6 +18,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { AuthService } from '../../core/services/auth.service';
 import { ProjectService } from '../../core/services/project.service';
 import { Project } from '../../core/models/project.model';
+import { ConfigService } from '../../core/services/config.service';
+import { environment } from '../../../environments/environment';
 import { ProjectCreateEditDialog } from './project-create-edit-dialog/project-create-edit-dialog';
 import { ProjectDeleteDialog } from './project-delete-dialog/project-delete-dialog';
 import { fadeInUp } from '../../core/animations/gsap-animations';
@@ -42,6 +44,7 @@ import { take } from 'rxjs';
 export class ProjectsPage implements OnInit, AfterViewInit {
   private authService = inject(AuthService);
   private projectService = inject(ProjectService);
+  private configService = inject(ConfigService);
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
 
@@ -141,6 +144,13 @@ export class ProjectsPage implements OnInit, AfterViewInit {
         });
       }
     });
+  }
+
+  getScriptTag(project: Project): string {
+    const cdnBase = this.configService.cdnBaseUrl;
+    const apiEndpoint = this.configService.apiEndpoint;
+    const version = environment.apiVersion;
+    return `<script src="${cdnBase}/${version}/widget.js" data-api-key="${project.api_key}" data-endpoint="${apiEndpoint}/${version}"></script>`;
   }
 
   copyScriptTag(scriptTag: string): void {
