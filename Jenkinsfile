@@ -6,8 +6,7 @@ pipeline {
     }
 
     environment {
-        // Assume GCP credentials are bound to the Jenkins server host
-        GCP_PROJECT_ID = 'uxiguide-prod'
+        GCP_PROJECT_ID = 'uxiguide-c0393'
         DOCKER_REGISTRY = "gcr.io/${GCP_PROJECT_ID}"
         
         // Pull FIREBASE_TOKEN securely from Jenkins Credentials config
