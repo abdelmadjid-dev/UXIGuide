@@ -104,7 +104,7 @@ pipeline {
                 
                 // Deploy Frontend to Firebase Hosting
                 sh "chmod +x ./ops/deploy-frontend.sh"
-                sh "docker run --rm -v \$(pwd):/app -w /app -e FIREBASE_TOKEN=${FIREBASE_TOKEN} node:22-alpine sh -c 'apk add --no-cache bash && npm install -g firebase-tools && ./ops/deploy-frontend.sh ${GCP_PROJECT_ID} ${VERSION_TAG}'"
+                sh "docker run --rm -v \$(pwd):/app -w /app -e FIREBASE_TOKEN=${FIREBASE_TOKEN} node:22-slim sh -c 'npm install -g firebase-tools && ./ops/deploy-frontend.sh ${GCP_PROJECT_ID} ${VERSION_TAG}'"
             }
         }
     }
