@@ -60,7 +60,7 @@ runner = Runner(app_name=APP_NAME, agent=agent, session_service=session_service)
 # HTTP Endpoints
 # ========================================
 
-@app.get("/v0.1/widget.js")
+@app.get("/v0.1/api/widget.js")
 async def serve_widget():
     """Serve the built widget script."""
     widget_path = Path(__file__).parent.parent.parent / "script" / "dist" / "widget.js"
@@ -69,7 +69,7 @@ async def serve_widget():
         return {"error": "widget.js not found. Please run 'npm run build' in the /script directory."}
     return FileResponse(widget_path)
 
-@app.get("/v0.1/health")
+@app.get("/v0.1/api/health")
 async def health_check():
     """Diagnostic endpoint to verify Firestore and Environment."""
     try:
@@ -90,7 +90,7 @@ async def health_check():
 # WebSocket Endpoint
 # ========================================
 
-@app.websocket("/v0.1/interact/{user_id}/{session_id}")
+@app.websocket("/v0.1/api/interact/{user_id}/{session_id}")
 async def websocket_endpoint(websocket: WebSocket, user_id: str, session_id: str, api_key: str | None = None) -> None:
     # 0. Check for API Key in query params if not found in path
     if not api_key:

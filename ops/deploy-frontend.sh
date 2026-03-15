@@ -7,6 +7,9 @@ set -e
 GCP_PROJECT_ID=$1
 VERSION_TAG=$2
 
+# Sanitize version (e.g., v0.1 -> v0-1) for Firebase rewrite serviceId
+VERSION_TAG_SANITIZED=$(echo "${VERSION_TAG}" | sed 's/\./-/g')
+
 echo "Starting Frontend/Widget Deployment for version ${VERSION_TAG}..."
 
 # We need a temporary firebase.json structure to map the deployments
@@ -21,6 +24,13 @@ cat <<EOF > firebase.json
       "**/node_modules/**"
     ],
     "rewrites": [
+      {
+        "source": "/${VERSION_TAG}/api/**",
+        "run": {
+          "serviceId": "uxiguide-backend-${VERSION_TAG_SANITIZED}",
+          "region": "europe-west9"
+        }
+      },
       {
         "source": "/${VERSION_TAG}/dashboard/**",
         "destination": "/${VERSION_TAG}/dashboard/index.html"
