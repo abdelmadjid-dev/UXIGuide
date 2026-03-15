@@ -69,13 +69,30 @@ async def serve_widget():
         return {"error": "widget.js not found. Please run 'npm run build' in the /script directory."}
     return FileResponse(widget_path)
 
+@app.get("/v0.1/health")
+async def health_check():
+    """Diagnostic endpoint to verify Firestore and Environment."""
+    try:
+        # Try a simple Firestore metadata fetch
+        db.collection("projects").limit(1).get(timeout=2.0)
+        firestore_status = "connected"
+    except Exception as e:
+        firestore_status = f"error: {str(e)}"
+
+    return {
+        "status": "ok",
+        "version": "v0.1",
+        "firestore": firestore_status,
+        "app_name": APP_NAME
+    }
+
 # ========================================
 # WebSocket Endpoint
 # ========================================
 
 @app.websocket("/v0.1/interact/{user_id}/{session_id}")
 async def websocket_endpoint(websocket: WebSocket, user_id: str, session_id: str, api_key: str | None = None) -> None:
-    # 0. Check for API Key in query params if not found in path (safety)
+    # 0. Check for API Key in query params if not found in path
     if not api_key:
         api_key = websocket.query_params.get("api_key")
         
@@ -84,15 +101,15 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str, session_id: str
         await websocket.close(code=1008, reason="Missing API Key")
         return
 
-    # 1. Extract and sanitize Origin
+    # 1. Extract and sanitize Origin (Case-Insensitive Host)
     origin = websocket.headers.get("origin")
     request_host = ""
     if origin:
-        # Remove protocol, then split by port if present, then remove trailing slashes
-        request_host = origin.replace("https://", "").replace("http://", "").split(":")[0].rstrip("/")
+        # Remove protocol, then split by port if present, then remove trailing slashes and lowercase
+        request_host = origin.replace("https://", "").replace("http://", "").split(":")[0].rstrip("/").lower()
         
     if not request_host:
-        logger.warning(f"Rejected WS connection: Missing or invalid Origin header for API Key {api_key}")
+        logger.warning(f"Rejected WS connection: Missing or invalid Origin header for API Key {api_key}. Received Origin: '{origin}'")
         await websocket.close(code=1008, reason="Missing Origin header")
         return
         
@@ -105,8 +122,7 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str, session_id: str
         if not results:
             logger.warning(f"No Firestore project found with api_key: '{api_key}'")
             return None
-        data = results[0].to_dict()
-        return data
+        return results[0].to_dict()
 
     try:
         project_data = await asyncio.to_thread(_get_project_data)
@@ -122,22 +138,21 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str, session_id: str
 
     # 3. Validate Origin against the project's whitelisted domain
     whitelisted_input = project_data.get("whitelisted_domain", "")
-    # Sanitize whitelist (remove protocol, ports, trailing slashes)
-    whitelisted_host = whitelisted_input.replace("https://", "").replace("http://", "").split(":")[0].rstrip("/")
+    # Sanitize whitelist (remove protocol, ports, trailing slashes and lowercase)
+    whitelisted_host = whitelisted_input.replace("https://", "").replace("http://", "").split(":")[0].rstrip("/").lower()
     
-    logger.info(f"Context: API Key {api_key} | Origin Host: '{request_host}' | Whitelisted Host: '{whitelisted_host}'")
+    logger.info(f"Handshake Logic: API Key {api_key} | Request Host: '{request_host}' | Whitelisted Host: '{whitelisted_host}'")
     
-    # Check for direct match or localhost/127.0.0.1 equivalence for dev
+    # Check for direct match or localhost/127.0.0.1 equivalence for local development
+    local_hosts = ["localhost", "127.0.0.1"]
     is_authorized = (request_host == whitelisted_host)
-    if not is_authorized:
-        # Flexible check for local development
-        local_hosts = ["localhost", "127.0.0.1"]
-        if request_host in local_hosts and whitelisted_host in local_hosts:
-            is_authorized = True
-            logger.info(f"Authorized local development alias: '{request_host}' matches whitelisted '{whitelisted_host}'")
+    
+    if not is_authorized and request_host in local_hosts and whitelisted_host in local_hosts:
+        is_authorized = True
+        logger.info(f"Authorized local development alias: '{request_host}' allowed for whitelisted '{whitelisted_host}'")
 
     if not is_authorized:
-        logger.warning(f"Rejected WS connection: Origin Host '{request_host}' != Whitelisted Host '{whitelisted_host}'")
+        logger.warning(f"Rejected WS connection: Host mismatch. '{request_host}' != '{whitelisted_host}'")
         await websocket.close(code=1008, reason="Unauthorized Domain")
         return
 
