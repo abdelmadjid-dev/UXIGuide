@@ -8,7 +8,7 @@ GCP_PROJECT_ID=$1
 VERSION_TAG=$2
 DOCKER_REGISTRY=$3
 
-SERVICE_NAME="uxiguide-backend-${VERSION_TAG}"
+SERVICE_NAME=$(echo "uxiguide-backend-${VERSION_TAG}" | sed 's/\./-/g')
 IMAGE_URL="${DOCKER_REGISTRY}/uxiguide-backend:${VERSION_TAG}"
 
 echo "Starting Backend Deployment for ${SERVICE_NAME}..."
