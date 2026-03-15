@@ -96,7 +96,7 @@ pipeline {
                 // Authenticate gcloud using the injected secret file credential
                 sh "gcloud auth activate-service-account --key-file=\"${GCP_CREDENTIALS}\""
                 sh "gcloud config set project ${GCP_PROJECT_ID}"
-                sh "gcloud auth configure-docker --quiet"
+                sh "gcloud auth configure-docker ${GCP_REGION}-docker.pkg.dev --quiet"
                 
                 // Deploy Backend to Cloud Run
                 sh "chmod +x ./ops/deploy-backend.sh"
