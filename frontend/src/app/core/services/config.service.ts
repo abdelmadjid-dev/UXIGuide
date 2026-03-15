@@ -13,8 +13,8 @@ export class ConfigService {
     // Basic settings for Remote Config
     this.remoteConfig.settings.minimumFetchIntervalMillis = environment.production ? 3600000 : 0;
     this.remoteConfig.defaultConfig = {
-      [`cdn_url_${sanitizedVersion}`]: environment.cdnBaseUrl,
-      [`api_url_${sanitizedVersion}`]: environment.cdnBaseUrl, // Fallback to same as CDN if not set
+      [`cdn_url_${sanitizedVersion}`]: `${environment.cdnBaseUrl}/${environment.apiVersion}`,
+      [`api_url_${sanitizedVersion}`]: `${environment.cdnBaseUrl}/${environment.apiVersion}/api`,
     };
     
     // Initial fetch

@@ -149,8 +149,7 @@ export class ProjectsPage implements OnInit, AfterViewInit {
   getScriptTag(project: Project): string {
     const cdnBase = this.configService.cdnBaseUrl;
     const apiEndpoint = this.configService.apiEndpoint;
-    const version = environment.apiVersion;
-    return `<script src="${cdnBase}/${version}/widget.js" data-api-key="${project.api_key}" data-endpoint="${apiEndpoint}/${version}"></script>`;
+    return `<script src="${cdnBase}/widget.js" data-api-key="${project.api_key}" data-endpoint="${apiEndpoint}"></script>`;
   }
 
   copyScriptTag(scriptTag: string): void {
