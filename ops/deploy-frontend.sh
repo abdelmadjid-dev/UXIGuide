@@ -22,8 +22,8 @@ cat <<EOF > firebase.json
     ],
     "rewrites": [
       {
-        "source": "**",
-        "destination": "/index.html"
+        "source": "/${VERSION_TAG}/dashboard/**",
+        "destination": "/${VERSION_TAG}/dashboard/index.html"
       }
     ]
   }
