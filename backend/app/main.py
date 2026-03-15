@@ -86,12 +86,13 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str, session_id: str
 
     # 1. Extract and sanitize Origin
     origin = websocket.headers.get("origin")
-    domain = ""
+    request_host = ""
     if origin:
-        domain = origin.replace("https://", "").replace("http://", "").rstrip("/")
+        # Remove protocol, then split by port if present, then remove trailing slashes
+        request_host = origin.replace("https://", "").replace("http://", "").split(":")[0].rstrip("/")
         
-    if not domain:
-        logger.warning(f"Rejected WS connection: Missing Origin header for API Key {api_key}")
+    if not request_host:
+        logger.warning(f"Rejected WS connection: Missing or invalid Origin header for API Key {api_key}")
         await websocket.close(code=1008, reason="Missing Origin header")
         return
         
@@ -100,13 +101,11 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str, session_id: str
         logger.info(f"Querying Firestore for api_key: '{api_key}'")
         projects_ref = db.collection("projects")
         query = projects_ref.where(filter=FieldFilter("api_key", "==", api_key)).limit(1)
-        # Use .get() instead of .stream() for easier results handling
         results = query.get(timeout=5.0)
         if not results:
             logger.warning(f"No Firestore project found with api_key: '{api_key}'")
             return None
         data = results[0].to_dict()
-        logger.info(f"Found project: {data.get('name')} (ID: {results[0].id})")
         return data
 
     try:
@@ -122,15 +121,27 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str, session_id: str
         return
 
     # 3. Validate Origin against the project's whitelisted domain
-    whitelisted_domain = project_data.get("whitelisted_domain", "")
-    logger.info(f"Comparing requested domain '{domain}' against whitelist '{whitelisted_domain}'")
+    whitelisted_input = project_data.get("whitelisted_domain", "")
+    # Sanitize whitelist (remove protocol, ports, trailing slashes)
+    whitelisted_host = whitelisted_input.replace("https://", "").replace("http://", "").split(":")[0].rstrip("/")
     
-    if domain != whitelisted_domain:
-        logger.warning(f"Rejected WS connection: Domain '{domain}' != '{whitelisted_domain}'")
+    logger.info(f"Context: API Key {api_key} | Origin Host: '{request_host}' | Whitelisted Host: '{whitelisted_host}'")
+    
+    # Check for direct match or localhost/127.0.0.1 equivalence for dev
+    is_authorized = (request_host == whitelisted_host)
+    if not is_authorized:
+        # Flexible check for local development
+        local_hosts = ["localhost", "127.0.0.1"]
+        if request_host in local_hosts and whitelisted_host in local_hosts:
+            is_authorized = True
+            logger.info(f"Authorized local development alias: '{request_host}' matches whitelisted '{whitelisted_host}'")
+
+    if not is_authorized:
+        logger.warning(f"Rejected WS connection: Origin Host '{request_host}' != Whitelisted Host '{whitelisted_host}'")
         await websocket.close(code=1008, reason="Unauthorized Domain")
         return
 
-    logger.info(f"Authorized connection for API Key {api_key} (Domain: {domain})")
+    logger.info(f"Authorized connection for API Key {api_key} (Host: {request_host})")
     await websocket.accept()
 
     # Build RunConfig with optional proactivity and affective dialog

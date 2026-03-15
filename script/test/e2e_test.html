@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -28,7 +29,9 @@
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
 
-        h1, h2, h3 {
+        h1,
+        h2,
+        h3 {
             margin-top: 0;
             color: #38bdf8;
         }
@@ -78,63 +81,62 @@
         }
     </style>
 </head>
+
 <body>
 
-<div class="container">
-    <div class="card">
-        <span class="status-badge">E2E Test Environment</span>
-        <h1>UXIGuide Tester</h1>
-        <p>Testing live deployment on <code>localhost</code>.</p>
+    <div class="container">
+        <div class="card">
+            <span class="status-badge">E2E Test Environment</span>
+            <h1>UXIGuide Tester</h1>
+            <p>Testing live deployment on <code>localhost</code>.</p>
 
-        <div id="capture-root">
-            <label>Public Username:</label>
-            <input type="text" value="Testing_User_v0.1">
+            <div id="capture-root">
+                <label>Public Username:</label>
+                <input type="text" value="Testing_User_v0.1">
 
-            <label>Sensitive Data (Redacted by Class):</label>
-            <div class="redact-uxiguide">
-                THIS SHOULD BE BLACKED OUT IN CAPTURE
+                <label>Sensitive Data (Redacted by Class):</label>
+                <div class="redact-uxiguide">
+                    THIS SHOULD BE BLACKED OUT IN CAPTURE
+                </div>
+
+                <label>Password Field (Auto-Redacted):</label>
+                <input type="password" value="secret_pass_123">
+
+                <div style="margin-top:30px;">
+                    <button id="btn-trigger-ai">Ask for Help</button>
+                </div>
             </div>
+        </div>
 
-            <label>Password Field (Auto-Redacted):</label>
-            <input type="password" value="secret_pass_123">
-
-            <div style="margin-top:30px;">
-                <button id="btn-trigger-ai">Ask for Help</button>
-            </div>
+        <div class="card">
+            <h3>Deployment Info</h3>
+            <ul>
+                <li><b>Branch:</b> release/v0.1</li>
+                <li><b>Project ID:</b> <code>67ba35cd-55a4-4851-861a-e72421eadde8</code></li>
+                <li><b>Whitelisted:</b> localhost</li>
+            </ul>
+            <hr style="border-color: #334155;">
+            <p>This page uses the live <code>widget.js</code> served from Firebase Hosting.</p>
         </div>
     </div>
 
-    <div class="card">
-        <h3>Deployment Info</h3>
-        <ul>
-            <li><b>Branch:</b> release/v0.1</li>
-            <li><b>Project ID:</b> <code>67ba35cd-55a4-4851-861a-e72421eadde8</code></li>
-            <li><b>Whitelisted:</b> localhost</li>
-        </ul>
-        <hr style="border-color: #334155;">
-        <p>This page uses the live <code>widget.js</code> served from Firebase Hosting.</p>
-    </div>
-</div>
+    <!-- LIVE WIDGET TAG PROVIDED BY USER -->
+    <script src="https://uxiguide-c0393.web.app/v0.1/widget.js" data-api-key="a9e109e5-529c-4715-a3cd-1cd26a91bc15"
+        data-endpoint="https://uxiguide-backend-v0-1-577009316832.europe-west9.run.app/v0.1">
+        </script>
 
-<!-- LIVE WIDGET TAG PROVIDED BY USER -->
-<script 
-    src="https://uxiguide-c0393.web.app/v0.1/widget.js" 
-    data-api-key="67ba35cd-55a4-4851-861a-e72421eadde8" 
-    data-endpoint="https://uxiguide-backend-v0-1-577009316832.europe-west9.run.app"
-    class="uxiguide-script"
-></script>
-
-<script>
-    // Manual trigger for the E2E test
-    document.getElementById('btn-trigger-ai').addEventListener('click', () => {
-        if (window.UXIGuide) {
-            console.log('Triggering UXIGuide session...');
-            // Assuming specific API for triggering, or just let the auto-init handle it
-        } else {
-            alert('UXIGuide not loaded yet!');
-        }
-    });
-</script>
+    <script>
+        // Manual trigger for the E2E test
+        document.getElementById('btn-trigger-ai').addEventListener('click', () => {
+            if (window.UXIGuide) {
+                console.log('Triggering UXIGuide session...');
+                // Assuming specific API for triggering, or just let the auto-init handle it
+            } else {
+                alert('UXIGuide not loaded yet!');
+            }
+        });
+    </script>
 
 </body>
+
 </html>
