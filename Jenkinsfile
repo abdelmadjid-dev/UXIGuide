@@ -61,18 +61,18 @@ pipeline {
                     // Inject Stub Development Environment (Required for resolution during build replacement)
                     writeFile file: "frontend/src/environments/environment.development.ts", text: env.FRONTEND_PROD_CONFIG
                 }
-                sh '''
-                docker run --rm -v $(pwd):/app -w /app node:22-alpine sh -c "
+                sh """
+                docker run --rm -v \$(pwd):/app -w /app node:22-alpine sh -c "
                     if [ -d 'frontend' ]; then
-                        echo 'Building Frontend...'
-                        cd frontend && npm install && npm run build && cd ..
+                        echo 'Building Frontend with base-href /${env.VERSION_TAG}/dashboard/'
+                        cd frontend && npm install && npm run build -- --base-href /${env.VERSION_TAG}/dashboard/ && cd ..
                     fi &&
                     if [ -d 'script' ]; then
                         echo 'Building Widget Script...'
                         cd script && npm install && npm run build && cd ..
                     fi
                 "
-                '''
+                """
             }
         }
 
