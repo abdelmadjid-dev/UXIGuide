@@ -9,11 +9,12 @@ export class ConfigService {
   private remoteConfig = inject(RemoteConfig);
 
   constructor() {
+    const sanitizedVersion = environment.apiVersion.replace(/\./g, '_');
     // Basic settings for Remote Config
     this.remoteConfig.settings.minimumFetchIntervalMillis = environment.production ? 3600000 : 0;
     this.remoteConfig.defaultConfig = {
-      [`cdn-url-${environment.apiVersion}`]: environment.cdnBaseUrl,
-      [`api-url-${environment.apiVersion}`]: environment.cdnBaseUrl, // Fallback to same as CDN if not set
+      [`cdn_url_${sanitizedVersion}`]: environment.cdnBaseUrl,
+      [`api_url_${sanitizedVersion}`]: environment.cdnBaseUrl, // Fallback to same as CDN if not set
     };
     
     // Initial fetch
@@ -27,7 +28,8 @@ export class ConfigService {
    * Priority: Remote Config > Local Environment
    */
   get cdnBaseUrl(): string {
-    return getValue(this.remoteConfig, `cdn-url-${environment.apiVersion}`).asString();
+    const sanitizedVersion = environment.apiVersion.replace(/\./g, '_');
+    return getValue(this.remoteConfig, `cdn_url_${sanitizedVersion}`).asString();
   }
 
   /**
@@ -35,6 +37,7 @@ export class ConfigService {
    * Priority: Remote Config > Local Environment
    */
   get apiEndpoint(): string {
-    return getValue(this.remoteConfig, `api-url-${environment.apiVersion}`).asString();
+    const sanitizedVersion = environment.apiVersion.replace(/\./g, '_');
+    return getValue(this.remoteConfig, `api_url_${sanitizedVersion}`).asString();
   }
 }
