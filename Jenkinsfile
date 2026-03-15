@@ -104,7 +104,7 @@ pipeline {
                 
                 // Deploy Frontend to Firebase Hosting
                 sh "chmod +x ./ops/deploy-frontend.sh"
-                sh "./ops/deploy-frontend.sh ${GCP_PROJECT_ID} ${VERSION_TAG}"
+                sh "docker run --rm -v \$(pwd):/app -w /app -e FIREBASE_TOKEN=${FIREBASE_TOKEN} node:22-alpine sh -c 'npm install -g firebase-tools && ./ops/deploy-frontend.sh ${GCP_PROJECT_ID} ${VERSION_TAG}'"
             }
         }
     }
@@ -112,11 +112,10 @@ pipeline {
     post {
         always {
             script {
-                try {
-                    cleanWs(deleteDirs: true, disableDeferredWipeout: true)
-                } catch (Exception e) {
-                    echo "Cleanup skipped: ${e.message}"
-                }
+                echo "Final Workspace Cleanup: Removing root-owned residues..."
+                // Use Docker to wipe the workspace as root before standard cleanup
+                sh "docker run --rm -v \$(pwd):/app -w /app alpine sh -c 'rm -rf ./* ./.[!.]* ./.??* 2>/dev/null || true'"
+                cleanWs(deleteDirs: true, disableDeferredWipeout: true)
             }
         }
     }
