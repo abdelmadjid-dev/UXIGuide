@@ -13,12 +13,14 @@ import {
 } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 import { Project } from '../models/project.model';
-import { environment } from '../../../environments/environment.development';
+import { ConfigService } from './config.service';
+import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class ProjectService {
   private firestore = inject(Firestore);
   private injector = inject(Injector);
+  private configService = inject(ConfigService);
   private readonly collectionName = 'projects';
 
   /** Returns all projects belonging to the given user. */
@@ -33,9 +35,10 @@ export class ProjectService {
   /** Creates a new project document in Firestore with a unique API key and prefilled script tag. */
   async createProject(uid: string, name: string, domain: string): Promise<void> {
     const apiKey = crypto.randomUUID();
-    const cdnBase = environment.cdnBaseUrl;
+    const cdnBase = this.configService.cdnBaseUrl;
+    const apiEndpoint = this.configService.apiEndpoint;
     const version = environment.apiVersion;
-    const scriptTag = `<script src="${cdnBase}/${version}/widget.js" data-api-key="${apiKey}" data-endpoint="${cdnBase}/${version}"></script>`;
+    const scriptTag = `<script src="${cdnBase}/${version}/widget.js" data-api-key="${apiKey}" data-endpoint="${apiEndpoint}/${version}"></script>`;
 
     await runInInjectionContext(this.injector, () => {
       const ref = collection(this.firestore, this.collectionName);
