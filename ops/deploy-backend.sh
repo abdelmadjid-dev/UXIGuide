@@ -7,6 +7,7 @@ set -e
 GCP_PROJECT_ID=$1
 VERSION_TAG=$2
 DOCKER_REGISTRY=$3
+GOOGLE_API_KEY=$4
 
 SERVICE_NAME=$(echo "uxiguide-backend-${VERSION_TAG}" | sed 's/\./-/g')
 IMAGE_URL="${DOCKER_REGISTRY}/uxiguide-backend:${VERSION_TAG}"
@@ -30,6 +31,7 @@ gcloud run deploy ${SERVICE_NAME} \
     --port 8080 \
     --max-instances 2 \
     --memory 512Mi \
-    --cpu 1
+    --cpu 1 \
+    --set-env-vars "GOOGLE_API_KEY=${GOOGLE_API_KEY}"
 
 echo "Backend ${SERVICE_NAME} successfully deployed!"

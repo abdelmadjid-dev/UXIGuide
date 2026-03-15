@@ -93,14 +93,16 @@ pipeline {
             steps {
                 echo "Deploying Version: ${VERSION_TAG} for branch ${env.BRANCH_NAME}"
                 
-                // Authenticate gcloud using the injected secret file credential
-                sh "gcloud auth activate-service-account --key-file=\"${GCP_CREDENTIALS}\""
-                sh "gcloud config set project ${GCP_PROJECT_ID}"
-                sh "gcloud auth configure-docker ${GCP_REGION}-docker.pkg.dev --quiet"
-                
-                // Deploy Backend to Cloud Run
-                sh "chmod +x ./ops/deploy-backend.sh"
-                sh "./ops/deploy-backend.sh ${GCP_PROJECT_ID} ${VERSION_TAG} ${DOCKER_REGISTRY}"
+                withCredentials([string(credentialsId: 'uxiguide-google-api-key', variable: 'GOOGLE_API_KEY')]) {
+                    // Authenticate gcloud using the injected secret file credential
+                    sh "gcloud auth activate-service-account --key-file=\"${GCP_CREDENTIALS}\""
+                    sh "gcloud config set project ${GCP_PROJECT_ID}"
+                    sh "gcloud auth configure-docker ${GCP_REGION}-docker.pkg.dev --quiet"
+                    
+                    // Deploy Backend to Cloud Run
+                    sh "chmod +x ./ops/deploy-backend.sh"
+                    sh "./ops/deploy-backend.sh ${GCP_PROJECT_ID} ${VERSION_TAG} ${DOCKER_REGISTRY} ${GOOGLE_API_KEY}"
+                }
                 
                 // Deploy Frontend to Firebase Hosting
                 sh "chmod +x ./ops/deploy-frontend.sh"
