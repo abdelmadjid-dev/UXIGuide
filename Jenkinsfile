@@ -7,7 +7,8 @@ pipeline {
 
     environment {
         GCP_PROJECT_ID = 'uxiguide-c0393'
-        DOCKER_REGISTRY = "gcr.io/${GCP_PROJECT_ID}"
+        GCP_REGION = 'europe-west9'
+        DOCKER_REGISTRY = "${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/uxiguide-repo"
         
         // Pull FIREBASE_TOKEN securely from Jenkins Credentials config
         FIREBASE_TOKEN = credentials('uxiguide-firebase-token')

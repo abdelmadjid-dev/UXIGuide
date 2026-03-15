@@ -19,11 +19,13 @@ docker push ${IMAGE_URL}
 
 # Deploy to Cloud Run with strict cost-saving limits
 echo "Deploying to Google Cloud Run..."
+# Extract region from registry URL (first part)
+REGION=$(echo $DOCKER_REGISTRY | cut -d'-' -f1-2)
 gcloud run deploy ${SERVICE_NAME} \
     --image ${IMAGE_URL} \
     --project ${GCP_PROJECT_ID} \
     --platform managed \
-    --region us-central1 \
+    --region ${REGION} \
     --allow-unauthenticated \
     --port 8080 \
     --max-instances 2 \
