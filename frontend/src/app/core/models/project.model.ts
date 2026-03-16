@@ -1,3 +1,9 @@
+export interface PersonaConfig {
+  tone: string;
+  speed: string;
+  formality: string;
+}
+
 export interface Project {
   project_id: string;
   client_uid: string;
@@ -7,7 +13,8 @@ export interface Project {
   script_tag?: string;
   widget_config: {
     theme_color: string;
-    persona: string;
+    persona: string; // Keeping for legacy or general description
   };
+  persona_config: PersonaConfig;
   whitelisted_domain: string;
 }

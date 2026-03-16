@@ -12,6 +12,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -20,7 +21,6 @@ import { ProjectService } from '../../core/services/project.service';
 import { Project } from '../../core/models/project.model';
 import { ConfigService } from '../../core/services/config.service';
 import { environment } from '../../../environments/environment';
-import { ProjectCreateEditDialog } from './project-create-edit-dialog/project-create-edit-dialog';
 import { ProjectDeleteDialog } from './project-delete-dialog/project-delete-dialog';
 import { fadeInUp } from '../../core/animations/gsap-animations';
 import { take } from 'rxjs';
@@ -37,6 +37,8 @@ import { take } from 'rxjs';
     MatDialogModule,
     MatSnackBarModule,
     MatTooltipModule,
+    RouterLink,
+    RouterLinkActive,
   ],
   templateUrl: './projects.html',
   styleUrl: './projects.css',
@@ -45,6 +47,7 @@ export class ProjectsPage implements OnInit, AfterViewInit {
   private authService = inject(AuthService);
   private projectService = inject(ProjectService);
   private configService = inject(ConfigService);
+  private router = inject(Router);
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
 
@@ -93,39 +96,11 @@ export class ProjectsPage implements OnInit, AfterViewInit {
   }
 
   openCreateDialog(): void {
-    const dialogRef = this.dialog.open(ProjectCreateEditDialog, {
-      width: '480px',
-      panelClass: 'custom-dialog',
-      data: { uid: this.uid },
-    });
-
-    dialogRef.afterClosed().subscribe((result) => {
-      if (result) {
-        this.snackBar.open(`Project "${result}" created!`, 'OK', {
-          duration: 3000,
-          horizontalPosition: 'end',
-          verticalPosition: 'bottom',
-        });
-      }
-    });
+    this.router.navigate(['/projects/new']);
   }
 
   openEditDialog(project: Project): void {
-    const dialogRef = this.dialog.open(ProjectCreateEditDialog, {
-      width: '480px',
-      panelClass: 'custom-dialog',
-      data: { uid: this.uid, project },
-    });
-
-    dialogRef.afterClosed().subscribe((result) => {
-      if (result) {
-        this.snackBar.open(`Project "${result}" updated!`, 'OK', {
-          duration: 3000,
-          horizontalPosition: 'end',
-          verticalPosition: 'bottom',
-        });
-      }
-    });
+    this.router.navigate(['/projects', project.project_id]);
   }
 
   async deleteProject(project: Project): Promise<void> {
@@ -149,7 +124,17 @@ export class ProjectsPage implements OnInit, AfterViewInit {
   getScriptTag(project: Project): string {
     const cdnBase = this.configService.cdnBaseUrl;
     const apiEndpoint = this.configService.apiEndpoint;
-    return `<script src="${cdnBase}/widget.js" data-api-key="${project.api_key}" data-endpoint="${apiEndpoint}"></script>`;
+    const p = project.persona_config || { tone: '', speed: '', formality: '' };
+    
+    return `<script 
+  src="${cdnBase}/widget.js" 
+  data-api-key="${project.api_key}" 
+  data-endpoint="${apiEndpoint}"
+  data-persona-tone="${p.tone}"
+  data-persona-speed="${p.speed}"
+  data-persona-formality="${p.formality}"
+  data-theme-color="${project.widget_config?.theme_color || '#4F46E5'}"
+></script>`;
   }
 
   copyScriptTag(scriptTag: string): void {
