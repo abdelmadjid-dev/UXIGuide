@@ -13,7 +13,7 @@ import {
   updateDoc,
 } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
-import { Project, PersonaConfig } from '../models/project.model';
+import { Project, PersonaConfig, ThemeConfig } from '../models/project.model';
 import { ConfigService } from './config.service';
 import { environment } from '../../../environments/environment';
 
@@ -46,7 +46,7 @@ export class ProjectService {
   }
 
   /** Creates a new project document in Firestore with a unique API key and prefilled script tag. */
-  async createProject(uid: string, name: string, domain: string, personaConfig?: PersonaConfig): Promise<string> {
+  async createProject(uid: string, name: string, domain: string, personaConfig?: PersonaConfig, themeConfig?: ThemeConfig): Promise<string> {
     const apiKey = crypto.randomUUID();
 
     return runInInjectionContext(this.injector, async () => {
@@ -57,13 +57,29 @@ export class ProjectService {
         created_at: serverTimestamp(),
         api_key: apiKey,
         widget_config: {
-          theme_color: '#4F46E5',
+          theme_color: themeConfig?.fabColor || '#4F46E5',
           persona: personaConfig?.tone || 'Professional and concise', // fallback for legacy persona field
         },
         persona_config: personaConfig || {
           tone: 'Use a formal and professional tone in all responses.',
           speed: 'Keep responses brief and get straight to the point.',
           formality: 'Stick to strict formal language and etiquette.',
+        },
+        theme_config: themeConfig || {
+          fabColor: '#4F46E5',
+          onFabColor: '#FFFFFF',
+          nextBtnColor: '#4F46E5',
+          onNextBtnColor: '#FFFFFF',
+          modalColor: '#FFFFFF',
+          modalTitleColor: '#111827',
+          modalBodyColor: '#374151',
+          featureIconColor: '#4F46E5',
+          featureTitleColor: '#111827',
+          featureBodyColor: '#4B5563',
+          primaryButtonColor: '#4F46E5',
+          onPrimaryButtonColor: '#FFFFFF',
+          secondaryButtonColor: '#F3F4F6',
+          onSecondaryButtonColor: '#111827',
         },
         whitelisted_domain: domain,
       });

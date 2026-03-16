@@ -4,6 +4,23 @@ export interface PersonaConfig {
   formality: string;
 }
 
+export interface ThemeConfig {
+  fabColor?: string;
+  onFabColor?: string;
+  nextBtnColor?: string;
+  onNextBtnColor?: string;
+  modalColor?: string;
+  modalTitleColor?: string;
+  modalBodyColor?: string;
+  featureIconColor?: string;
+  featureTitleColor?: string;
+  featureBodyColor?: string;
+  primaryButtonColor?: string;
+  onPrimaryButtonColor?: string;
+  secondaryButtonColor?: string;
+  onSecondaryButtonColor?: string;
+}
+
 export interface Project {
   project_id: string;
   client_uid: string;
@@ -16,5 +33,6 @@ export interface Project {
     persona: string; // Keeping for legacy or general description
   };
   persona_config: PersonaConfig;
+  theme_config: ThemeConfig;
   whitelisted_domain: string;
 }

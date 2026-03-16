@@ -125,6 +125,7 @@ export class ProjectsPage implements OnInit, AfterViewInit {
     const cdnBase = this.configService.cdnBaseUrl;
     const apiEndpoint = this.configService.apiEndpoint;
     const p = project.persona_config || { tone: '', speed: '', formality: '' };
+    const t = project.theme_config || {};
     
     return `<script 
   src="${cdnBase}/widget.js" 
@@ -133,7 +134,20 @@ export class ProjectsPage implements OnInit, AfterViewInit {
   data-persona-tone="${p.tone}"
   data-persona-speed="${p.speed}"
   data-persona-formality="${p.formality}"
-  data-theme-color="${project.widget_config?.theme_color || '#4F46E5'}"
+  data-theme-fab-color="${t.fabColor || ''}"
+  data-theme-on-fab-color="${t.onFabColor || ''}"
+  data-theme-next-btn-color="${t.nextBtnColor || ''}"
+  data-theme-on-next-btn-color="${t.onNextBtnColor || ''}"
+  data-theme-modal-color="${t.modalColor || ''}"
+  data-theme-modal-title-color="${t.modalTitleColor || ''}"
+  data-theme-modal-body-color="${t.modalBodyColor || ''}"
+  data-theme-feature-icon-color="${t.featureIconColor || ''}"
+  data-theme-feature-title-color="${t.featureTitleColor || ''}"
+  data-theme-feature-body-color="${t.featureBodyColor || ''}"
+  data-theme-primary-button-color="${t.primaryButtonColor || ''}"
+  data-theme-on-primary-button-color="${t.onPrimaryButtonColor || ''}"
+  data-theme-secondary-button-color="${t.secondaryButtonColor || ''}"
+  data-theme-on-secondary-button-color="${t.onSecondaryButtonColor || ''}"
 ></script>`;
   }
 
