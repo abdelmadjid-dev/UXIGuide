@@ -50,16 +50,12 @@ export class App implements OnInit, AfterViewInit {
   private router = inject(Router);
   readonly themeService = inject(ThemeService);
 
-  readonly sidebar = viewChild<ElementRef>('sidebarContent');
-
   isAuthenticated = signal(false);
   userEmail = signal('');
   userInitial = signal('');
 
   navItems: NavItem[] = [
     { label: 'Projects', icon: 'folder_open', route: '/projects' },
-    { label: 'Analytics', icon: 'analytics', route: '/analytics' },
-    { label: 'Knowledge Base', icon: 'menu_book', route: '/knowledge-base' },
   ];
 
   ngOnInit(): void {
@@ -73,8 +69,7 @@ export class App implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    const el = this.sidebar()?.nativeElement;
-    if (el) fadeInUp(el, 0.2);
+    // Topbar doesn't currently need an animation trigger here
   }
 
   async logout(): Promise<void> {
