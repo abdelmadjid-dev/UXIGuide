@@ -1,0 +1,89 @@
+<div class="project-detail-container">
+  <!-- Header -->
+  <header class="page-header">
+    <div class="header-left">
+      <button mat-icon-button routerLink="/projects" matTooltip="Back to Projects">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div class="header-text">
+        <h2 class="page-title">{{ isEditMode() ? 'Edit Project' : 'Create New Project' }}</h2>
+        <p class="page-subtitle">
+          {{ isEditMode() ? 'Update your project settings and AI persona' : 'Set up a new application to use UXIGuide' }}
+        </p>
+      </div>
+    </div>
+  </header>
+
+  <form [formGroup]="projectForm" (ngSubmit)="onSubmit()" class="detail-form glass">
+    <!-- Basic Info -->
+    <div class="form-section">
+      <h3 class="section-title"><mat-icon>info</mat-icon> Application Details</h3>
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Project Name</mat-label>
+          <input matInput formControlName="name" placeholder="My Awesome App">
+          <mat-error *ngIf="projectForm.get('name')?.hasError('required')">Name is required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Whitelisted Domain</mat-label>
+          <input matInput formControlName="whitelisted_domain" placeholder="example.com">
+          <mat-icon matPrefix style="margin-right: 8px;">language</mat-icon>
+          <mat-hint>The domain where UXIGuide will be allowed to run</mat-hint>
+          <mat-error *ngIf="projectForm.get('whitelisted_domain')?.hasError('required')">Domain is required</mat-error>
+          <mat-error *ngIf="projectForm.get('whitelisted_domain')?.hasError('pattern')">Invalid domain format</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" *ngIf="isEditMode()">
+          <mat-label>API Key</mat-label>
+          <input matInput formControlName="api_key">
+          <mat-icon matSuffix matTooltip="This is your unique identifiers" style="cursor: help;">key</mat-icon>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <!-- Persona Config -->
+    <div class="form-section" formGroupName="persona_config">
+      <h3 class="section-title"><mat-icon>psychology</mat-icon> AI Persona Configuration</h3>
+      <p class="section-desc">Customize how the AI assistant interacts with your users.</p>
+      
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Response Tone</mat-label>
+          <mat-select formControlName="tone">
+            @for (opt of toneOptions; track opt.label) {
+              <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Response Speed / Detail</mat-label>
+          <mat-select formControlName="speed">
+            @for (opt of speedOptions; track opt.label) {
+              <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Formality Level</mat-label>
+          <mat-select formControlName="formality">
+            @for (opt of formalityOptions; track opt.label) {
+              <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button mat-button type="button" routerLink="/projects" [disabled]="isLoading()">Cancel</button>
+      <button mat-flat-button color="primary" type="submit" [disabled]="projectForm.invalid || isLoading()">
+        {{ isLoading() ? 'Saving...' : (isEditMode() ? 'Save Changes' : 'Create Project') }}
+      </button>
+    </div>
+  </form>
+</div>
