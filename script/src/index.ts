@@ -10,7 +10,7 @@ import './ui/styles.css';
 
 class UXIGuideScript {
     private readonly apiKey: string;
-    private config: Config;
+    private readonly config: Config;
     private isInitialized: boolean = false;
     private uiManager: UIManager | null = null;
 
@@ -53,34 +53,42 @@ class UXIGuideScript {
             // On Starting
             async () => {
                 if (this.config.debug) console.log('UXIGuide: Consent Approved');
-                sendMessage(INITIALIZE_SESSION);
-                this.watcher.initialTrigger();
-                startAudio();
+                // Initialize Websocket
+                connectWebsocket(
+                    this.config,
+                    async (name: string, response: any) => {
+                        switch (name) {
+                            case "dispatch_next_action":
+                                const ids: string[] = response.ids;
+                                this.uiManager!.goToElement(ids[0]);
+                                this.uiManager!.highlightElement(ids);
+                                this.uiManager!.listenToElement(ids, () => sendMessage(STEP_COMPLETED));
+                                break;
+                        }
+                    },
+                    // On Connection Opened
+                    async () => {
+                        sendMessage(INITIALIZE_SESSION);
+                        this.watcher.initialTrigger();
+                        startAudio();
+                    },
+                    // On Connection Closed
+                    () => {
+                        this.watcher.stopObserving();
+                        this.uiManager?.stopHighlight();
+                        this.uiManager!.stopAnimation();
+                    },
+                    // On Toast
+                    (message, state) => this.uiManager!.showToast(message, state),
+                    // On Interrupted
+                    () => this.uiManager?.stopHighlight()
+                );
             },
             // On Closing
             () => userInitiatedClosure(),
             // Theme Configuration
             this.config.theme
         );
-
-        // Initialize Websocket
-        connectWebsocket(
-            this.config,
-            async (name: string, response: any) => {
-                switch (name) {
-                    case "dispatch_next_action":
-                        const ids: string[] = response.ids;
-                        this.uiManager!.goToElement(ids[0]);
-                        this.uiManager!.highlightElement(ids);
-                        this.uiManager!.listenToElement(ids, () => sendMessage(STEP_COMPLETED));
-                        break;
-                }
-            },
-            // On Connection Closed
-            () => this.uiManager!.stopAnimation(),
-            // On Toast
-            (message, state) => this.uiManager!.showToast(message, state)
-        )
 
         this.isInitialized = true;
     }
@@ -101,7 +109,7 @@ class UXIGuideScript {
             return null;
         }
 
-        return new UXIGuideScript({ apiKey, endpoint });
+        return new UXIGuideScript({apiKey, endpoint});
     }
 }
 
