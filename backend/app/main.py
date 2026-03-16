@@ -141,7 +141,10 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str, session_id: str
     # Sanitize whitelist (remove protocol, ports, trailing slashes and lowercase)
     whitelisted_host = whitelisted_input.replace("https://", "").replace("http://", "").split(":")[0].rstrip("/").lower()
     
-    logger.info(f"Handshake Logic: API Key {api_key} | Request Host: '{request_host}' | Whitelisted Host: '{whitelisted_host}'")
+    # DEBUG LOGS FOR PROXY ISSUES
+    logger.info(f"WS Handshake Trace | API Key: {api_key}")
+    logger.info(f"Headers: {dict(websocket.headers)}")
+    logger.info(f"Handshake Logic: Request Host (from Origin): '{request_host}' | Whitelisted Host: '{whitelisted_host}'")
     
     # Check for direct match or localhost/127.0.0.1 equivalence for local development
     local_hosts = ["localhost", "127.0.0.1"]

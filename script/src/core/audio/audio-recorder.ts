@@ -35,7 +35,8 @@ export async function startAudioRecorderWorklet(audioRecorderHandler: (pcmData: 
 /**
  * Stop the microphone.
  */
-export function stopMicrophone(micStream: MediaStream) {
+export function stopMicrophone(micStream: MediaStream | undefined) {
+  if (!micStream) return;
   micStream.getTracks().forEach((track) => track.stop());
 }
 
