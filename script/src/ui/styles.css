@@ -106,7 +106,6 @@
 .uxiguide-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
@@ -117,9 +116,11 @@
 
 .uxiguide-modal {
     border-radius: 24px;
+    background: rgba(0, 0, 0, 0.4);
     padding: 32px;
     max-width: 400px;
     width: 100%;
+    gap: 10px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
@@ -188,7 +189,7 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: white;
+    background: #FFFFFF88;
     opacity: 0;
     pointer-events: none; /* Ensure it doesn't block clicks */
     z-index: 2147483647 !important;
