@@ -3,30 +3,48 @@ import {domToJpeg} from 'modern-screenshot';
 export class UIChangesWatcher {
     private _debounceTimer: number | null = null;
     private readonly onCapture: () => void;
+    // Observers
+    private _originalPushState = history.pushState;
+    private _originalReplaceState = history.replaceState;
+    private _popstateHandler = () => this._schedule();
+    private _hashchangeHandler = () => this._schedule();
+    private _observer: MutationObserver | null = null;
+    private _flaggedElementsObserver = (e: PointerEvent) => {
+        const drasticChangeSelectors = [
+            '[aria-haspopup]',
+            '[aria-controls]',
+            '[aria-expanded]',
+            '[role="combobox"]',
+            '[role="tab"]'
+        ].join(',');
+
+        const target = e.target as Element;
+        if (target.closest(drasticChangeSelectors)) {
+            this._schedule(500);
+        }
+    }
 
     constructor(onCapture: () => Promise<void>) {
         this.onCapture = onCapture;
         this._debounceTimer = null;
-        this._init();
     }
 
-    _init() {
+    initialTrigger() {
         // SPA navigation
-        const patchHistory = (method: keyof History) => {
-            const original = (history[method] as Function).bind(history);
-            // @ts-ignore - Necessary because we are overwriting a read-only/fixed method
-            history[method] = (...args: any[]) => {
-                original(...args);
-                this._schedule();
-            };
+        history.pushState = (...args) => {
+            this._originalPushState.apply(history, args);
+            this._schedule();
         };
-        patchHistory('pushState');
-        patchHistory('replaceState');
-        window.addEventListener('popstate', () => this._schedule());
-        window.addEventListener('hashchange', () => this._schedule());
 
-        // Overlays / dialogs
-        new MutationObserver((mutations) => {
+        history.replaceState = (...args) => {
+            this._originalReplaceState.apply(history, args);
+            this._schedule();
+        };
+        window.addEventListener('popstate', this._popstateHandler);
+        window.addEventListener('hashchange', this._hashchangeHandler);
+
+        // overlays / dialogs
+        this._observer = new MutationObserver((mutations) => {
             for (const {addedNodes} of mutations) {
                 for (const node of addedNodes) {
                     if (this._isOverlay(node)) {
@@ -35,20 +53,32 @@ export class UIChangesWatcher {
                     }
                 }
             }
-        }).observe(document.body, {childList: true, subtree: true});
-
-        // Developer-flagged elements
-        document.addEventListener('click', (e: PointerEvent) => {
-            // TODO: update flag type & text
-            const target = e.target as Element;
-            if (target.closest('[uxig-ui-change-trigger]')) {
-                this._schedule(500);
-            }
         });
+        this._observer.observe(document.body, {childList: true, subtree: true});
+
+        // developer-flagged elements
+        document.addEventListener('pointerdown', this._flaggedElementsObserver);
+
+        // start first trigger
+        this._schedule();
     }
 
-    initialTrigger() {
-        this._schedule();
+    stopObserving() {
+        // restore original methods
+        history.pushState = this._originalPushState;
+        history.replaceState = this._originalReplaceState;
+
+        window.removeEventListener('popstate', this._popstateHandler);
+        window.removeEventListener('hashchange', this._hashchangeHandler);
+
+        // remove observer
+        if (this._observer) {
+            this._observer.disconnect();
+            this._observer = null;
+        }
+
+        // remove flagged elements
+        document.removeEventListener('pointerdown', this._flaggedElementsObserver);
     }
 
     _isOverlay(node: Node) {
@@ -105,15 +135,14 @@ export async function captureSafeScreenshot(rootElement = document.body) {
             scale: window.devicePixelRatio,
             width: rootElement.scrollWidth,
             height: rootElement.scrollHeight,
+            filter: (node: any) => node.id !== 'uxiguide-fab',
             onCloneNode: (clonedDoc: any) => {
                 // Find sensitive elements in the CLONED document
                 const sensitiveSelectors = [
                     'input[type="password"]',
                     'input[name*="cvv"]',
                     'input[name*="cardnumber"]',
-                    // TODO: change naming here
-                    '[data-uxiguide-ignore]',
-                    '.uxiguide-ignore',
+                    '[aria-hidden="true"]',
                     'iframe',
                     '.cookie-banner',
                     '#intercom-container'
