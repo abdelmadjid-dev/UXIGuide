@@ -44,14 +44,14 @@ except ValueError:
     firebase_app = firebase_admin.initialize_app()
 db = firestore.client()
 
-app = FastAPI(docs_url="/v0.1/api/docs", openapi_url="/v0.1/api/openapi.json")
+app = FastAPI(docs_url="/v0.2/api/docs", openapi_url="/v0.2/api/openapi.json")
 
 # Mounting static files for development/testing
 static_dir = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 # Define versioned router
-router_v01 = APIRouter(prefix="/v0.1/api")
+router_v02 = APIRouter(prefix="/v0.2/api")
 
 # Define your session service
 session_service = InMemorySessionService()
@@ -60,7 +60,7 @@ session_service = InMemorySessionService()
 # HTTP Endpoints
 # ========================================
 
-@router_v01.get("/widget.js")
+@router_v02.get("/widget.js")
 async def serve_widget():
     """Serve the built widget script."""
     widget_path = Path(__file__).parent.parent.parent / "script" / "dist" / "widget.js"
@@ -69,7 +69,7 @@ async def serve_widget():
         return {"error": "widget.js not found. Please run 'npm run build' in the /script directory."}
     return FileResponse(widget_path)
 
-@router_v01.get("/health")
+@router_v02.get("/health")
 async def health_check():
     """Diagnostic endpoint to verify Firestore and Environment."""
     try:
@@ -81,7 +81,7 @@ async def health_check():
 
     return {
         "status": "ok",
-        "version": "v0.1",
+        "version": "v0.2",
         "firestore": firestore_status,
         "app_name": APP_NAME
     }
@@ -90,7 +90,7 @@ async def health_check():
 # WebSocket Endpoint
 # ========================================
 
-@router_v01.websocket("/interact/{user_id}/{session_id}")
+@router_v02.websocket("/interact/{user_id}/{session_id}")
 async def websocket_endpoint(websocket: WebSocket, user_id: str, session_id: str, api_key: str | None = None) -> None:
     # 0. Check for API Key in query params if not found in path
     if not api_key:
@@ -262,4 +262,4 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str, session_id: str
         # Always close the queue, even if exceptions occurred
         live_request_queue.close()
 
-app.include_router(router_v01)
+app.include_router(router_v02)
