@@ -79,6 +79,31 @@
       </div>
     </div>
 
+    <mat-divider></mat-divider>
+
+    <!-- Theme Customization -->
+    <div class="form-section">
+      <h3 class="section-title"><mat-icon>palette</mat-icon> Appearance Customization</h3>
+      <p class="section-desc">Fine-tune the colors for FAB, Modals, and Buttons to match your brand.</p>
+      
+      <div class="color-grid" formGroupName="theme_config">
+        @for (opt of colorCustomizationOptions; track opt.key) {
+          <div class="color-item" [class.centered-item]="$index >= 12">
+            <div class="color-picker-wrapper">
+              <input type="color" [formControlName]="opt.key" class="hidden-color-input" [id]="opt.key">
+              <label [for]="opt.key" class="color-preview" [style.background-color]="projectForm.get('theme_config.' + opt.key)?.value">
+                <mat-icon *ngIf="$index < 12">edit</mat-icon>
+              </label>
+            </div>
+            <div class="color-info">
+              <label class="color-label">{{ opt.label }}</label>
+              <span class="color-desc">{{ opt.desc }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
     <div class="form-actions">
       <button mat-button type="button" routerLink="/projects" [disabled]="isLoading()">Cancel</button>
       <button mat-flat-button color="primary" type="submit" [disabled]="projectForm.invalid || isLoading()">

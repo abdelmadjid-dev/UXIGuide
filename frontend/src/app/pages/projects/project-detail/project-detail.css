@@ -81,6 +81,135 @@
   gap: 1.25rem 1.5rem;
 }
 
+/* Customization Grid */
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1.5rem;
+  padding: 1rem 0;
+}
+
+.color-item {
+  grid-column: span 2;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  transition: all 0.2s ease;
+}
+
+.color-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--brand-primary-light);
+  transform: translateY(-2px);
+}
+
+.color-picker-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.hidden-color-input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.color-preview {
+  display: block;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.color-preview:hover {
+  transform: scale(1.1);
+}
+
+.color-preview mat-icon {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  color: white;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.color-item:hover .color-preview mat-icon {
+  opacity: 1;
+}
+
+.color-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.color-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.color-desc {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Centering last two items (13 and 14) in a 3-item row (6-col grid) */
+.color-grid .color-item:nth-child(13) {
+  grid-column: 2 / 4;
+}
+
+.color-grid .color-item:nth-child(14) {
+  grid-column: 4 / 6;
+}
+
+/* On tablet, 2 per row (4-col grid equivalent) */
+@media (max-width: 900px) {
+  .color-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .color-grid .color-item {
+    grid-column: span 2;
+  }
+  .color-grid .color-item:nth-child(13),
+  .color-grid .color-item:nth-child(14) {
+    grid-column: span 2;
+  }
+}
+
+/* On mobile, 1 per row */
+@media (max-width: 600px) {
+  .color-grid {
+    grid-template-columns: 1fr;
+  }
+  .color-grid .color-item {
+    grid-column: auto;
+  }
+}
+
 .form-actions {
   display: flex;
   align-items: center;

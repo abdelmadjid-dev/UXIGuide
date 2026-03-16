@@ -66,6 +66,23 @@ export class ProjectDetailPage implements OnInit {
     { label: 'Informal', value: 'Omit formalities and use direct, simple address.' }
   ];
 
+  colorCustomizationOptions = [
+    { key: 'fabColor', label: 'FAB Background', desc: 'Main trigger button color' },
+    { key: 'onFabColor', label: 'FAB Icon', desc: 'Color of the icon inside the FAB' },
+    { key: 'nextBtnColor', label: 'Next Button BG', desc: 'Color of the "Next" navigation button' },
+    { key: 'onNextBtnColor', label: 'Next Button Text', desc: 'Color of the text on the "Next" button' },
+    { key: 'modalColor', label: 'Modal Background', desc: 'Main dialog background color' },
+    { key: 'modalTitleColor', label: 'Modal Title', desc: 'Color of the main title text' },
+    { key: 'modalBodyColor', label: 'Modal Body', desc: 'Color of the secondary/body text' },
+    { key: 'featureIconColor', label: 'Feature Icon', desc: 'Color of the icons in features' },
+    { key: 'featureTitleColor', label: 'Feature Title', desc: 'Color of the feature titles' },
+    { key: 'featureBodyColor', label: 'Feature Body', desc: 'Color of the feature descriptions' },
+    { key: 'primaryButtonColor', label: 'Primary Button BG', desc: 'Main action button background' },
+    { key: 'onPrimaryButtonColor', label: 'Primary Button Text', desc: 'Main action button text' },
+    { key: 'secondaryButtonColor', label: 'Secondary Button BG', desc: 'Secondary action button background' },
+    { key: 'onSecondaryButtonColor', label: 'Secondary Button Text', desc: 'Secondary action button text' },
+  ];
+
   constructor() {
     this.projectForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
@@ -75,6 +92,22 @@ export class ProjectDetailPage implements OnInit {
         tone: [this.toneOptions[0].value, Validators.required],
         speed: [this.speedOptions[0].value, Validators.required],
         formality: [this.formalityOptions[0].value, Validators.required]
+      }),
+      theme_config: this.fb.group({
+        fabColor: ['#4F46E5'],
+        onFabColor: ['#FFFFFF'],
+        nextBtnColor: ['#4F46E5'],
+        onNextBtnColor: ['#FFFFFF'],
+        modalColor: ['#FFFFFF'],
+        modalTitleColor: ['#111827'],
+        modalBodyColor: ['#374151'],
+        featureIconColor: ['#4F46E5'],
+        featureTitleColor: ['#111827'],
+        featureBodyColor: ['#4B5563'],
+        primaryButtonColor: ['#4F46E5'],
+        onPrimaryButtonColor: ['#FFFFFF'],
+        secondaryButtonColor: ['#F3F4F6'],
+        onSecondaryButtonColor: ['#111827'],
       })
     });
   }
@@ -108,7 +141,8 @@ export class ProjectDetailPage implements OnInit {
             tone: this.toneOptions[0].value,
             speed: this.speedOptions[0].value,
             formality: this.formalityOptions[0].value
-          }
+          },
+          theme_config: project.theme_config || this.projectForm.get('theme_config')?.value
         });
       } else {
         this.snackBar.open('Project not found', 'OK', { duration: 3000 });
@@ -130,7 +164,8 @@ export class ProjectDetailPage implements OnInit {
     const projectData: Partial<Project> = {
       name: formValue.name,
       whitelisted_domain: formValue.whitelisted_domain,
-      persona_config: formValue.persona_config
+      persona_config: formValue.persona_config,
+      theme_config: formValue.theme_config
     };
 
     try {
@@ -142,8 +177,11 @@ export class ProjectDetailPage implements OnInit {
           this.uid,
           formValue.name,
           formValue.whitelisted_domain,
-          formValue.persona_config
+          formValue.persona_config,
+          formValue.theme_config
         );
+        // Note: createProject uses default theme_config if not passed. 
+        // We could update createProject to take theme_config if needed.
         this.snackBar.open('Project created successfully', 'OK', { duration: 3000 });
       }
       this.router.navigate(['/projects']);
