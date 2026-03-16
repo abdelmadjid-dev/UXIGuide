@@ -1,4 +1,4 @@
-import { Component, inject, signal, AfterViewInit, ElementRef, viewChild } from '@angular/core';
+import { Component, inject, signal, AfterViewInit, ElementRef, viewChild, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -35,11 +35,26 @@ export class LoginPage implements AfterViewInit {
 
   readonly loginCard = viewChild<ElementRef>('loginCard');
 
-  email = '';
-  password = '';
+  email = signal('');
+  password = signal('');
+  confirmPassword = signal('');
   isRegisterMode = signal(false);
   isLoading = signal(false);
-  errorMessage = signal('');
+  private _errorMessage = signal('');
+  errorMessage = this._errorMessage.asReadonly();
+
+  passwordsMatch = computed(() => {
+    if (!this.isRegisterMode()) return true;
+    if (!this.confirmPassword() && !this.password()) return true;
+    return this.password() === this.confirmPassword();
+  });
+
+  validationError = computed(() => {
+    if (this.isRegisterMode() && !this.passwordsMatch()) {
+      return 'Passwords do not match';
+    }
+    return '';
+  });
 
   ngAfterViewInit(): void {
     const el = this.loginCard()?.nativeElement;
@@ -47,19 +62,24 @@ export class LoginPage implements AfterViewInit {
   }
 
   async onSubmit(): Promise<void> {
-    if (!this.email || !this.password) return;
+    if (!this.email() || !this.password()) return;
+
+    if (this.isRegisterMode() && this.validationError()) {
+      return;
+    }
+
     this.isLoading.set(true);
-    this.errorMessage.set('');
+    this._errorMessage.set('');
 
     try {
       if (this.isRegisterMode()) {
-        await this.authService.register(this.email, this.password);
+        await this.authService.register(this.email(), this.password());
       } else {
-        await this.authService.loginWithEmail(this.email, this.password);
+        await this.authService.loginWithEmail(this.email(), this.password());
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Authentication failed';
-      this.errorMessage.set(message);
+      this._errorMessage.set(message);
     } finally {
       this.isLoading.set(false);
     }
@@ -67,13 +87,13 @@ export class LoginPage implements AfterViewInit {
 
   async onGoogleLogin(): Promise<void> {
     this.isLoading.set(true);
-    this.errorMessage.set('');
+    this._errorMessage.set('');
 
     try {
       await this.authService.loginWithGoogle();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Google sign-in failed';
-      this.errorMessage.set(message);
+      this._errorMessage.set(message);
     } finally {
       this.isLoading.set(false);
     }
@@ -81,6 +101,7 @@ export class LoginPage implements AfterViewInit {
 
   toggleMode(): void {
     this.isRegisterMode.update((v) => !v);
-    this.errorMessage.set('');
+    this._errorMessage.set('');
+    this.confirmPassword.set('');
   }
 }
