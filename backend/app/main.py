@@ -6,7 +6,7 @@ import warnings
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, APIRouter
 from google.adk import Runner
 from google.adk.agents import RunConfig, LiveRequestQueue
 from google.adk.agents.run_config import StreamingMode
@@ -44,11 +44,14 @@ except ValueError:
     firebase_app = firebase_admin.initialize_app()
 db = firestore.client()
 
-app = FastAPI()
+app = FastAPI(docs_url="/v0.1/api/docs", openapi_url="/v0.1/api/openapi.json")
 
-# Mount static files, TODO: this is used for testing, to be removed on production
+# Mounting static files for development/testing
 static_dir = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+# Define versioned router
+router_v01 = APIRouter(prefix="/v0.1/api")
 
 # Define your session service
 session_service = InMemorySessionService()
@@ -60,7 +63,7 @@ runner = Runner(app_name=APP_NAME, agent=agent, session_service=session_service)
 # HTTP Endpoints
 # ========================================
 
-@app.get("/v0.1/api/widget.js")
+@router_v01.get("/widget.js")
 async def serve_widget():
     """Serve the built widget script."""
     widget_path = Path(__file__).parent.parent.parent / "script" / "dist" / "widget.js"
@@ -69,7 +72,7 @@ async def serve_widget():
         return {"error": "widget.js not found. Please run 'npm run build' in the /script directory."}
     return FileResponse(widget_path)
 
-@app.get("/v0.1/api/health")
+@router_v01.get("/health")
 async def health_check():
     """Diagnostic endpoint to verify Firestore and Environment."""
     try:
@@ -90,7 +93,7 @@ async def health_check():
 # WebSocket Endpoint
 # ========================================
 
-@app.websocket("/v0.1/api/interact/{user_id}/{session_id}")
+@router_v01.websocket("/interact/{user_id}/{session_id}")
 async def websocket_endpoint(websocket: WebSocket, user_id: str, session_id: str, api_key: str | None = None) -> None:
     # 0. Check for API Key in query params if not found in path
     if not api_key:
@@ -141,10 +144,11 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str, session_id: str
     # Sanitize whitelist (remove protocol, ports, trailing slashes and lowercase)
     whitelisted_host = whitelisted_input.replace("https://", "").replace("http://", "").split(":")[0].rstrip("/").lower()
     
-    # DEBUG LOGS FOR PROXY ISSUES
-    logger.info(f"WS Handshake Trace | API Key: {api_key}")
-    logger.info(f"Headers: {dict(websocket.headers)}")
-    logger.info(f"Handshake Logic: Request Host (from Origin): '{request_host}' | Whitelisted Host: '{whitelisted_host}'")
+    # EXHAUSTIVE DIAGNOSTIC LOGS
+    logger.info(f"--- Handshake Deep Trace (API Key: {api_key}) ---")
+    logger.info(f"Handshake Headers: {json.dumps(dict(websocket.headers), indent=2)}")
+    logger.info(f"Handshake Logic: Request Host (Origin-based): '{request_host}' | Whitelisted Host: '{whitelisted_host}'")
+    logger.info(f"--------------------------------------------------")
     
     # Check for direct match or localhost/127.0.0.1 equivalence for local development
     local_hosts = ["localhost", "127.0.0.1"]
@@ -241,5 +245,8 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str, session_id: str
     except Exception as e:
         logger.error(f"Unexpected error in streaming tasks: {e}", exc_info=True)
     finally:
+        await runner.close_session(session_id)
         # Always close the queue, even if exceptions occurred
         live_request_queue.close()
+
+app.include_router(router_v01)
