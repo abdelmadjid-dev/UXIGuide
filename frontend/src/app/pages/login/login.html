@@ -7,79 +7,68 @@
     <!-- Logo / Brand -->
     <div class="login-brand">
       <div class="brand-icon">
-        <mat-icon>smart_toy</mat-icon>
+        <img src="/logo-transparent.svg" alt="UXIGuide Logo" class="brand-logo-img">
       </div>
       <h1 class="brand-title">UXIGuide</h1>
-      <p class="brand-subtitle">AI-powered UX guidance for your SaaS</p>
     </div>
 
     <mat-card class="login-card glass">
       <mat-card-content>
         <h2 class="card-heading">
-          {{ isRegisterMode() ? 'Create an account' : 'Welcome back' }}
+          {{ isRegisterMode() ? 'Create your account' : 'Sign in' }}
         </h2>
-
-        <!-- Google Sign-In -->
-        <button
-          mat-stroked-button
-          class="google-btn"
-          (click)="onGoogleLogin()"
-          [disabled]="isLoading()"
-          id="google-login-btn"
-        >
-          <mat-icon>login</mat-icon>
-          Continue with Google
-        </button>
-
-        <mat-divider></mat-divider>
-        <p class="divider-text">or sign in with email</p>
 
         <!-- Email / Password Form -->
         <form (ngSubmit)="onSubmit()" class="login-form">
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Email</mat-label>
-            <input
-              matInput
-              type="email"
-              [(ngModel)]="email"
-              name="email"
-              required
-              id="email-input"
-            />
+            <input matInput type="email" [ngModel]="email()" (ngModelChange)="email.set($event)" name="email" required
+              id="email-input" />
             <mat-icon matPrefix>email</mat-icon>
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Password</mat-label>
-            <input
-              matInput
-              type="password"
-              [(ngModel)]="password"
-              name="password"
-              required
-              id="password-input"
-            />
+            <input matInput type="password" [ngModel]="password()" (ngModelChange)="password.set($event)"
+              name="password" required id="password-input" />
             <mat-icon matPrefix>lock</mat-icon>
           </mat-form-field>
 
-          @if (errorMessage()) {
-            <p class="error-message">{{ errorMessage() }}</p>
+          @if (isRegisterMode()) {
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Confirm Password</mat-label>
+            <input matInput type="password" [ngModel]="confirmPassword()" (ngModelChange)="confirmPassword.set($event)"
+              name="confirmPassword" required id="confirm-password-input" />
+            <mat-icon matPrefix>enhanced_encryption</mat-icon>
+          </mat-form-field>
           }
 
-          <button
-            mat-flat-button
-            color="primary"
-            type="submit"
-            class="submit-btn"
-            [disabled]="isLoading()"
-            id="submit-btn"
-          >
-            @if (isLoading()) {
-              <mat-spinner diameter="20"></mat-spinner>
-            } @else {
-              {{ isRegisterMode() ? 'Create Account' : 'Sign In' }}
-            }
-          </button>
+          @if (errorMessage() || validationError()) {
+          <p class="error-message">{{ errorMessage() || validationError() }}</p>
+          }
+
+          <div class="auth-actions">
+            <button mat-flat-button color="primary" type="submit" class="submit-btn" [disabled]="isLoading()"
+              id="login-submit-btn">
+              @if (isLoading()) {
+              <mat-spinner diameter="24" class="button-spinner"></mat-spinner>
+              } @else {
+              {{ isRegisterMode() ? 'Register' : 'Sign In' }}
+              }
+            </button>
+
+            <div class="auth-divider">
+              <span>or</span>
+            </div>
+
+            <button mat-stroked-button type="button" class="google-btn" (click)="onGoogleLogin()"
+              [disabled]="isLoading()" id="google-login-btn">
+              <div class="google-content-wrapper">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" alt="G">
+                <span>Continue with Google</span>
+              </div>
+            </button>
+          </div>
         </form>
 
         <p class="toggle-text">

@@ -3,6 +3,7 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
+  max-height: 100vh;
   position: relative;
   overflow: hidden;
   padding: 1rem;
@@ -36,8 +37,15 @@
 }
 
 @keyframes float {
-  0%, 100% { transform: translate(0, 0); }
-  50% { transform: translate(30px, -30px); }
+
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(30px, -30px);
+  }
 }
 
 .login-container {
@@ -49,7 +57,6 @@
 /* Brand */
 .login-brand {
   text-align: center;
-  margin-bottom: 2rem;
 }
 
 .brand-icon {
@@ -63,11 +70,9 @@
   margin-bottom: 0.75rem;
 }
 
-.brand-icon mat-icon {
-  font-size: 28px;
-  width: 28px;
-  height: 28px;
-  color: #fff;
+.brand-icon img.brand-logo-img {
+  width: 32px;
+  height: 32px;
 }
 
 .brand-title {
@@ -86,46 +91,84 @@
 
 /* Card */
 .login-card {
-  padding: 2rem;
+  padding: 1rem;
 }
 
 .card-heading {
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: 1.5rem;
+  font-weight: 700;
   margin: 0 0 1.5rem;
   text-align: center;
   color: var(--text-primary);
+  letter-spacing: -0.5px;
+}
+
+.auth-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
 }
 
 /* Google Button */
 .google-btn {
   width: 100%;
-  height: 44px;
-  border-radius: var(--radius-sm) !important;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
+  height: 48px;
+  border-radius: var(--radius-md) !important;
+  font-weight: 600;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   color: var(--text-primary) !important;
   border-color: var(--border-default) !important;
-  transition: background 0.2s;
+  transition: all 0.2s;
+  background: rgba(255, 255, 255, 0.03) !important;
 }
 
-.google-btn:hover {
-  background: rgba(255, 255, 255, 0.05) !important;
+.google-content-wrapper {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.75rem !important;
+  width: 100%;
+}
+
+/* Google Button hover state */
+.google-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: var(--outline-hover) !important;
+  transform: translateY(-1px);
+}
+
+.google-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: var(--outline-hover) !important;
+  transform: translateY(-1px);
 }
 
 /* Divider */
-mat-divider {
-  margin: 1.25rem 0 0.75rem !important;
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 1.5rem 0;
+  color: var(--text-muted);
 }
 
-.divider-text {
-  text-align: center;
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.auth-divider span {
+  padding: 0 1rem;
   font-size: 0.75rem;
-  color: var(--text-muted);
-  margin: 0 0 1rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 /* Form */
@@ -139,19 +182,39 @@ mat-divider {
   width: 100%;
 }
 
+::ng-deep .login-form .mat-mdc-form-field-focus-overlay {
+  background-color: transparent !important;
+}
+
+
 .submit-btn {
   width: 100%;
-  height: 44px;
-  border-radius: var(--radius-sm) !important;
+  height: 48px;
+  border-radius: var(--radius-md) !important;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-light)) !important;
   color: #fff !important;
-  margin-top: 0.5rem;
-  transition: box-shadow 0.3s;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.button-spinner {
+  --mdc-circular-progress-active-indicator-color: #ffffff !important;
+  display: block;
+}
+
+/* Fallback for deep SVG stroke if variable fails */
+::ng-deep .button-spinner svg circle {
+  stroke: #ffffff !important;
 }
 
 .submit-btn:hover:not(:disabled) {
-  box-shadow: 0 4px 20px rgba(79, 70, 229, 0.4);
+  box-shadow: 0 8px 24px rgba(79, 70, 229, 0.4);
+  transform: translateY(-1px);
 }
 
 /* Error */

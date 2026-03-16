@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@use '@angular/material' as mat;
 
 /* ── CSS Custom Properties (Dark-first) ──────────────────── */
 :root {
@@ -77,6 +77,13 @@ html, body {
 /* ── Angular Material M3 Overrides ───────────────────────── */
 
 /* Global form field contrast */
+/* Global form field rounding - Best Practice Approach */
+:root {
+  @include mat.form-field-overrides((
+    outlined-container-shape: var(--radius-md)
+  ));
+}
+
 .mat-mdc-form-field {
   --mdc-outlined-text-field-label-text-color: var(--text-secondary);
   --mdc-outlined-text-field-input-text-color: var(--text-primary);
@@ -91,7 +98,6 @@ html, body {
 .mat-mdc-form-field textarea.mat-mdc-input-element {
   color: var(--text-primary) !important;
   caret-color: var(--brand-primary-light) !important;
-  padding: 0 12px !important; /* Fix: text hugging left border */
 }
 
 /* Fix: chips hugging left border */
@@ -100,9 +106,10 @@ html, body {
   padding-right: 12px !important;
 }
 
-/* Adjust label positioning to match internal padding */
+/* Fix: Ensure floating label notch has enough room and doesn't clip */
 .mat-mdc-form-field.mat-form-field-appearance-outline .mdc-notched-outline__notch {
-  padding-left: 12px !important;
+  border-left: none;
+  border-right: none;
 }
 
 /* Fix: Only show placeholder when focused or has content (label is floating) */
