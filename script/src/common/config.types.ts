@@ -15,9 +15,14 @@ export interface ThemeConfig {
   onSecondaryButtonColor?: string;
 }
 
+export interface AIConfig {
+  voice?: string;
+}
+
 export interface Config {
   apiKey: string;
   endpoint: string;
   debug?: boolean;
   theme?: ThemeConfig;
+  ai?: AIConfig;
 }

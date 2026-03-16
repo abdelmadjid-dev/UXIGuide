@@ -114,7 +114,30 @@ class UXIGuideScript {
             return null;
         }
 
-        return new UXIGuideScript({apiKey, endpoint});
+        // Theme Configuration Parsing
+        const theme: any = {};
+        const themeAttributes = [
+            'fab-color', 'on-fab-color', 'next-btn-color', 'on-next-btn-color',
+            'modal-color', 'modal-title-color', 'modal-body-color',
+            'feature-icon-color', 'feature-title-color', 'feature-body-color',
+            'primary-button-color', 'on-primary-button-color',
+            'secondary-button-color', 'on-secondary-button-color'
+        ];
+
+        themeAttributes.forEach(attr => {
+            const val = scriptEl.getAttribute(`data-theme-${attr}`);
+            if (val) {
+                // camelCase the attribute name
+                const key = attr.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+                theme[key] = val;
+            }
+        });
+
+        return new UXIGuideScript({
+            apiKey, 
+            endpoint,
+            theme: Object.keys(theme).length > 0 ? theme : undefined
+        });
     }
 }
 
