@@ -19,7 +19,7 @@ import firebase_admin
 from firebase_admin import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 
-from app.agent import agent
+from app.agent import get_agent
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -55,9 +55,6 @@ router_v01 = APIRouter(prefix="/v0.1/api")
 
 # Define your session service
 session_service = InMemorySessionService()
-
-# Define your runner
-runner = Runner(app_name=APP_NAME, agent=agent, session_service=session_service)
 
 # ========================================
 # HTTP Endpoints
@@ -166,11 +163,24 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str, session_id: str
     logger.info(f"Authorized connection for API Key {api_key} (Host: {request_host})")
     await websocket.accept()
 
+    # Define your runner
+    runner = Runner(
+        app_name=APP_NAME,
+        agent=get_agent(
+            tone = project_data.get("tone", ""),
+            speed = project_data.get("speed", ""),
+            formality = project_data.get("formality", "")
+        ),
+        session_service=session_service
+    )
+
     # Build RunConfig with optional proactivity and affective dialog
     run_config = RunConfig(
         streaming_mode=StreamingMode.BIDI,
         session_resumption=types.SessionResumptionConfig(),
-        # TODO: potentially handle proactivity and affective dialog
+        speech_config=types.SpeechConfig(
+            voice_config=types.VoiceConfig(prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=project_data.get("voice", "Aoede")))
+        ),
     )
 
     # Get or create session (handles both new sessions and reconnections)
