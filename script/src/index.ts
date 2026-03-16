@@ -8,6 +8,9 @@ import {generateUIMap} from "./core/mapper.ts";
 
 import './ui/styles.css';
 
+const startingSound = new Audio('./starting.mp3');
+const captureSound = new Audio('./capture.mp3');
+
 class UXIGuideScript {
     private readonly apiKey: string;
     private readonly config: Config;
@@ -36,6 +39,7 @@ class UXIGuideScript {
     // Watcher
     watcher = new UIChangesWatcher(async () => {
         const screenshot = await captureSafeScreenshot();
+        await captureSound.play();
         this.uiManager?.showFlash();
         this.uiManager?.showToast("Screenshot taken! 📸");
         sendImage(screenshot.split(',')[1]);
@@ -68,6 +72,7 @@ class UXIGuideScript {
                     },
                     // On Connection Opened
                     async () => {
+                        await startingSound.play();
                         sendMessage(INITIALIZE_SESSION);
                         this.watcher.initialTrigger();
                         startAudio();
