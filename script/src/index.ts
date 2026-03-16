@@ -1,17 +1,18 @@
 import {Config} from "./common/config.types";
-import {UXIGuideUI} from "./ui/UXIGuideUI.ts";
+import {UIManager} from "./ui/UIManager.ts";
 import {userInitiatedClosure, connectWebsocket, sendImage, sendMessage, startAudio} from "./core/socket.ts";
 
-import './ui/styles.css';
 import {INITIALIZE_SESSION, STEP_COMPLETED, UPDATE_VISUAL_MEMORY} from "./common/commands.ts";
 import {captureSafeScreenshot, UIChangesWatcher} from "./core/capturer.ts";
 import {generateUIMap} from "./core/mapper.ts";
+
+import './ui/styles.css';
 
 class UXIGuideScript {
     private readonly apiKey: string;
     private config: Config;
     private isInitialized: boolean = false;
-    private ui: UXIGuideUI | null = null;
+    private uiManager: UIManager | null = null;
 
     constructor(config: Config) {
         if (!config.apiKey) {
@@ -34,9 +35,9 @@ class UXIGuideScript {
 
     // Watcher
     watcher = new UIChangesWatcher(async () => {
-        this.ui?.showFlash();
-        this.ui?.showToast("Screenshot taken! 📸");
         const screenshot = await captureSafeScreenshot();
+        this.uiManager?.showFlash();
+        this.uiManager?.showToast("Screenshot taken! 📸");
         sendImage(screenshot.split(',')[1]);
         const map = JSON.stringify(generateUIMap());
         sendMessage(UPDATE_VISUAL_MEMORY(map));
@@ -48,18 +49,18 @@ class UXIGuideScript {
         if (this.config.debug) console.log(`UXIGuideScript Initializing with key: ${this.apiKey}`);
 
         // Initialize
-        this.ui = new UXIGuideUI(
-            // On Open Connection
+        this.uiManager = new UIManager(
+            // On Starting
             async () => {
                 if (this.config.debug) console.log('UXIGuide: Consent Approved');
                 sendMessage(INITIALIZE_SESSION);
                 this.watcher.initialTrigger();
                 startAudio();
             },
-            // On Close Connection
-            () => {
-                userInitiatedClosure();
-            }
+            // On Closing
+            () => userInitiatedClosure(),
+            // Theme Configuration
+            this.config.theme
         );
 
         // Initialize Websocket
@@ -68,20 +69,22 @@ class UXIGuideScript {
             async (name: string, response: any) => {
                 switch (name) {
                     case "dispatch_next_action":
-                        this.ui!.goToElement(response.id);
-                        this.ui!.highlightElement(response.id);
-                        this.ui!.listenToElement(response.id, () => sendMessage(STEP_COMPLETED));
+                        const ids: string[] = response.ids;
+                        this.uiManager!.goToElement(ids[0]);
+                        this.uiManager!.highlightElement(ids);
+                        this.uiManager!.listenToElement(ids, () => sendMessage(STEP_COMPLETED));
                         break;
                 }
             },
             // On Connection Closed
-            () => this.ui!.stopAnimation(),
+            () => this.uiManager!.stopAnimation(),
             // On Toast
-            (message, state) => this.ui!.showToast(message, state)
+            (message, state) => this.uiManager!.showToast(message, state)
         )
 
         this.isInitialized = true;
     }
+
     /**
      * Factory: auto-initialize from <script> tag data attributes.
      * Usage: <script src="uxiguide.js" data-api-key="..." data-endpoint="wss://..."></script>
