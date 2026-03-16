@@ -1,4 +1,4 @@
-# UXIGuide (User Experience Interactive Guide)
+# UXIGuide
 
 **Break the "text box" paradigm with an AI boarding assistant that sees, hears, and guides.**
 
@@ -44,7 +44,7 @@ poetry run uvicorn app.main:app --reload
 cd frontend
 npm install
 ng serve
-# Dashboard will be available at http://localhost:4201
+# Dashboard will be available at http://localhost:4200
 ```
 
 ### 3. Widget Script Setup
@@ -66,7 +66,7 @@ The script automatically initializes using data attributes passed to the tag:
 <script 
   src="https://uxiguide.benaether.com/v0.2/widget.js" 
   data-api-key="YOUR_PROJECT_API_KEY" 
-  data-endpoint="wss://your-backend-v0-2.a.run.app/v0.2/api"
+  data-endpoint="wss://uxiguide-backend-v0-2.a.run.app/v0.2/api"
   data-theme-fab-color="#4F46E5"
   data-theme-on-fab-color="#FFFFFF"
 ></script>
@@ -76,7 +76,7 @@ The script automatically initializes using data attributes passed to the tag:
 To prevent the agent from "seeing" specific elements (like passwords or PII), add the `redact-uxiguide` class:
 
 ```html
-<input type="password" class="redact-uxiguide">
+<input type="password" aria-hidden="true">
 ```
 
 ## 📐 Architecture & Processes
@@ -84,7 +84,6 @@ To prevent the agent from "seeing" specific elements (like passwords or PII), ad
 For a deeper dive into how the system works, refer to the following documentation in the [/docs](./docs) directory:
 
 - **[Architecture Diagram](./docs/architecture_diagram.png)**: Visual representation of the connection between Gemini, Cloud Run, and the User's browser.
-- **[Sequence Diagram](./docs/sequence_diagram.png)**: Detailed step-by-step communication flow between the script and the AI agent.
 
 ## 📜 Versioning & Deployment
 UXIGuide follows a strict versioned release model managed by **Jenkins**. Each release (e.g., `v0.1`, `v0.2`) is deployed to isolated paths on Cloud Run and Firebase, ensuring legacy integrations remain stable. 
