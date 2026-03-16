@@ -6,6 +6,7 @@ let reconnectAttempts = 0;
 const maxReconnectDelay = 30000; // Max 30 seconds
 let heartbeatTimer: number | undefined = undefined;
 const HEARTBEAT_TIMEOUT = 10000; // 10 seconds
+let reconnectionTimeout: number | undefined;
 
 // Build WebSocket URL with api_key authorization
 function getWebSocketUrl(config: Config, userId: string, sessionId: string) {
@@ -43,8 +44,10 @@ function startHeartbeat() {
 export async function connectWebsocket(
     config: Config,
     onFunctionCalled: (name: string, response: any) => void,
+    onConnectionOpened: () => void,
     onConnectionClosed: () => void,
     showToast: (message: string, state: string) => void,
+    onInterrupted: () => void,
 ) {
     // Connect websocket
     const userId = "user-" + await generateBrowserId();
@@ -54,6 +57,8 @@ export async function connectWebsocket(
 
     websocket.onopen = () => {
         if (reconnectAttempts > 0) showToast("Back online! You can continue talking.", "info");
+        reconnectAttempts = 0;
+        onConnectionOpened();
     }
     websocket.onmessage = function (event) {
         // Every time we get ANY message (audio or ping), reset the timer
@@ -66,10 +71,8 @@ export async function connectWebsocket(
         // Parse the incoming ADK Event
         const adkEvent = JSON.parse(event.data);
 
-        // TODO: Handle interrupted event
-        if (adkEvent.interrupted === true) {
-
-        }
+        // Handle interrupted event
+        if (adkEvent.interrupted === true) onInterrupted();
 
         // Handle content events (text or audio)
         if (adkEvent.content && adkEvent.content.parts) {
@@ -101,13 +104,20 @@ export async function connectWebsocket(
             stopAudio();
             onConnectionClosed();
             return;
+        } else showToast(`Connection failed. Retrying... (Attempt ${reconnectAttempts + 1}/5)`, "error");
+
+        if (reconnectAttempts == 4) {
+            clearTimeout(reconnectionTimeout);
+            showToast("Connection failed after multiple attempts.", "error");
+            onConnectionClosed();
+            return;
         }
 
         // backoff strategy
         const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), maxReconnectDelay);
-        setTimeout(() => {
+        reconnectionTimeout = setTimeout(() => {
             reconnectAttempts++;
-            connectWebsocket(config, onFunctionCalled, onConnectionClosed, showToast);
+            connectWebsocket(config, onFunctionCalled, onConnectionOpened, onConnectionClosed, showToast, onInterrupted);
         }, delay);
     };
     websocket.onerror = (_: Event) => {
