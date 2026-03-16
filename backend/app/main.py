@@ -163,13 +163,15 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str, session_id: str
     logger.info(f"Authorized connection for API Key {api_key} (Host: {request_host})")
     await websocket.accept()
 
+    persona_config = project_data.get("persona_config", {})
+
     # Define your runner
     runner = Runner(
         app_name=APP_NAME,
         agent=get_agent(
-            tone = project_data.get("tone", ""),
-            speed = project_data.get("speed", ""),
-            formality = project_data.get("formality", "")
+            tone=persona_config.get("tone", ""),
+            speed=persona_config.get("speed", ""),
+            formality=persona_config.get("formality", "")
         ),
         session_service=session_service
     )
@@ -179,7 +181,8 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str, session_id: str
         streaming_mode=StreamingMode.BIDI,
         session_resumption=types.SessionResumptionConfig(),
         speech_config=types.SpeechConfig(
-            voice_config=types.VoiceConfig(prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=project_data.get("voice", "Aoede")))
+            voice_config=types.VoiceConfig(
+                prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=persona_config.get("voice", "Aoede")))
         ),
     )
 

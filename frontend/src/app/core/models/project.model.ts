@@ -2,6 +2,7 @@ export interface PersonaConfig {
   tone: string;
   speed: string;
   formality: string;
+  voice: string;
 }
 
 export interface ThemeConfig {

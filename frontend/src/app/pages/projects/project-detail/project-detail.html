@@ -14,101 +14,212 @@
     </div>
   </header>
 
-  <form [formGroup]="projectForm" (ngSubmit)="onSubmit()" class="detail-form glass">
-    <!-- Basic Info -->
-    <div class="form-section">
-      <h3 class="section-title"><mat-icon>info</mat-icon> Application Details</h3>
-      <div class="form-grid">
-        <mat-form-field appearance="outline">
-          <mat-label>Project Name</mat-label>
-          <input matInput formControlName="name" placeholder="My Awesome App">
-          <mat-error *ngIf="projectForm.get('name')?.hasError('required')">Name is required</mat-error>
-        </mat-form-field>
+  <div class="split-view">
+    <!-- Left Side: Form -->
+    <div class="form-side">
+      <form [formGroup]="projectForm" (ngSubmit)="onSubmit()" class="detail-form glass">
+        <!-- Basic Info -->
+        <div class="form-section">
+          <h3 class="section-title"><mat-icon>info</mat-icon> Application Details</h3>
+          <div class="form-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Project Name</mat-label>
+              <input matInput formControlName="name" placeholder="My Awesome App">
+              <mat-error *ngIf="projectForm.get('name')?.hasError('required')">Name is required</mat-error>
+            </mat-form-field>
+    
+            <mat-form-field appearance="outline">
+              <mat-label>Whitelisted Domain</mat-label>
+              <input matInput formControlName="whitelisted_domain" placeholder="example.com">
+              <mat-icon matPrefix style="margin-right: 8px;">language</mat-icon>
+              <mat-hint>The domain where UXIGuide will be allowed to run</mat-hint>
+              <mat-error *ngIf="projectForm.get('whitelisted_domain')?.hasError('required')">Domain is required</mat-error>
+              <mat-error *ngIf="projectForm.get('whitelisted_domain')?.hasError('pattern')">Invalid domain format</mat-error>
+            </mat-form-field>
+    
+            <mat-form-field appearance="outline" *ngIf="isEditMode()">
+              <mat-label>API Key</mat-label>
+              <input matInput formControlName="api_key">
+              <mat-icon matSuffix matTooltip="This is your unique identifiers" style="cursor: help;">key</mat-icon>
+            </mat-form-field>
+          </div>
+        </div>
+    
+        <mat-divider></mat-divider>
+    
+        <!-- Persona Config -->
+        <div class="form-section" formGroupName="persona_config">
+          <h3 class="section-title"><mat-icon>psychology</mat-icon> AI Persona Configuration</h3>
+          <p class="section-desc">Customize how the AI assistant interacts with your users.</p>
+          
+          <div class="form-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Response Tone</mat-label>
+              <mat-select formControlName="tone">
+                @for (opt of toneOptions; track opt.label) {
+                  <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+    
+            <mat-form-field appearance="outline">
+              <mat-label>Response Speed / Detail</mat-label>
+              <mat-select formControlName="speed">
+                @for (opt of speedOptions; track opt.label) {
+                  <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+    
+            <mat-form-field appearance="outline">
+              <mat-label>Formality Level</mat-label>
+              <mat-select formControlName="formality">
+                @for (opt of formalityOptions; track opt.label) {
+                  <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Whitelisted Domain</mat-label>
-          <input matInput formControlName="whitelisted_domain" placeholder="example.com">
-          <mat-icon matPrefix style="margin-right: 8px;">language</mat-icon>
-          <mat-hint>The domain where UXIGuide will be allowed to run</mat-hint>
-          <mat-error *ngIf="projectForm.get('whitelisted_domain')?.hasError('required')">Domain is required</mat-error>
-          <mat-error *ngIf="projectForm.get('whitelisted_domain')?.hasError('pattern')">Invalid domain format</mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" *ngIf="isEditMode()">
-          <mat-label>API Key</mat-label>
-          <input matInput formControlName="api_key">
-          <mat-icon matSuffix matTooltip="This is your unique identifiers" style="cursor: help;">key</mat-icon>
-        </mat-form-field>
-      </div>
+            <mat-form-field appearance="outline">
+              <mat-label>AI Voice</mat-label>
+              <mat-select formControlName="voice">
+                @for (opt of voiceOptions; track opt.label) {
+                  <mat-option [value]="opt.value" [matTooltip]="opt.desc">{{ opt.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </div>
+    
+        <mat-divider></mat-divider>
+    
+        <!-- Theme Customization -->
+        <div class="form-section">
+          <h3 class="section-title"><mat-icon>palette</mat-icon> Appearance Customization</h3>
+          <p class="section-desc">Fine-tune the colors for FAB, Modals, and Buttons to match your brand.</p>
+          
+          <div class="color-grid" formGroupName="theme_config">
+            @for (opt of colorCustomizationOptions; track opt.key) {
+              <div class="color-item">
+                <div class="color-picker-wrapper">
+                  <input type="color" [formControlName]="opt.key" class="hidden-color-input" [id]="opt.key">
+                  <label [for]="opt.key" class="color-preview" [style.background-color]="projectForm.get('theme_config.' + opt.key)?.value">
+                    <mat-icon ripple>edit</mat-icon>
+                  </label>
+                </div>
+                <div class="color-info">
+                  <label class="color-label">{{ opt.label }}</label>
+                  <span class="color-desc">{{ opt.desc }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+    
+        <div class="form-actions">
+          <button mat-button type="button" routerLink="/projects" [disabled]="isLoading()">Cancel</button>
+          <button mat-flat-button color="primary" type="submit" [disabled]="projectForm.invalid || isLoading()">
+            {{ isLoading() ? 'Saving...' : (isEditMode() ? 'Save Changes' : 'Create Project') }}
+          </button>
+        </div>
+      </form>
     </div>
 
-    <mat-divider></mat-divider>
-
-    <!-- Persona Config -->
-    <div class="form-section" formGroupName="persona_config">
-      <h3 class="section-title"><mat-icon>psychology</mat-icon> AI Persona Configuration</h3>
-      <p class="section-desc">Customize how the AI assistant interacts with your users.</p>
-      
-      <div class="form-grid">
-        <mat-form-field appearance="outline">
-          <mat-label>Response Tone</mat-label>
-          <mat-select formControlName="tone">
-            @for (opt of toneOptions; track opt.label) {
-              <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Response Speed / Detail</mat-label>
-          <mat-select formControlName="speed">
-            @for (opt of speedOptions; track opt.label) {
-              <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Formality Level</mat-label>
-          <mat-select formControlName="formality">
-            @for (opt of formalityOptions; track opt.label) {
-              <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-      </div>
-    </div>
-
-    <mat-divider></mat-divider>
-
-    <!-- Theme Customization -->
-    <div class="form-section">
-      <h3 class="section-title"><mat-icon>palette</mat-icon> Appearance Customization</h3>
-      <p class="section-desc">Fine-tune the colors for FAB, Modals, and Buttons to match your brand.</p>
-      
-      <div class="color-grid" formGroupName="theme_config">
-        @for (opt of colorCustomizationOptions; track opt.key) {
-          <div class="color-item" [class.centered-item]="$index >= 12">
-            <div class="color-picker-wrapper">
-              <input type="color" [formControlName]="opt.key" class="hidden-color-input" [id]="opt.key">
-              <label [for]="opt.key" class="color-preview" [style.background-color]="projectForm.get('theme_config.' + opt.key)?.value">
-                <mat-icon *ngIf="$index < 12">edit</mat-icon>
-              </label>
-            </div>
-            <div class="color-info">
-              <label class="color-label">{{ opt.label }}</label>
-              <span class="color-desc">{{ opt.desc }}</span>
+    <!-- Right Side: Live Preview -->
+    <div class="preview-side">
+      <div class="preview-sticky-container">
+        <div class="preview-header">
+          <div class="preview-header-top">
+            <span class="preview-badge">LIVE PREVIEW</span>
+            <div class="state-switcher">
+              <button type="button" [class.active]="previewState() === 'idle'" (click)="setPreviewState('idle')">FAB</button>
+              <button type="button" [class.active]="previewState() === 'consent'" (click)="setPreviewState('consent')">Modal</button>
+              <button type="button" [class.active]="previewState() === 'recording'" (click)="setPreviewState('recording')">Live</button>
+              <button type="button" [class.active]="previewState() === 'next'" (click)="setPreviewState('next')">Next</button>
             </div>
           </div>
-        }
+          <span class="preview-hint">Toggle states to see the widget in action</span>
+        </div>
+
+        <div class="mock-browser-window glass">
+          <div class="mock-browser-header">
+            <div class="dots"><span></span><span></span><span></span></div>
+            <div class="address-bar">{{ projectForm.get('whitelisted_domain')?.value || 'yourwebsite.com' }}</div>
+          </div>
+          
+          <div class="mock-content parity-context">
+            <!-- Mock Website Content -->
+            <div class="mock-web-body">
+              <div class="skeleton title"></div>
+              <div class="skeleton paragraph"></div>
+              <div class="skeleton paragraph"></div>
+              <div class="skeleton image"></div>
+            </div>
+
+            <!-- THE WIDGET PREVIEW (Parity with UIManager.ts) -->
+            <div class="widget-preview-overlay">
+              
+              <!-- 1. Consent Modal State -->
+              @if (previewState() === 'consent') {
+                <div class="uxiguide-overlay-mock">
+                  <div class="uxiguide-modal" [style.background]="projectForm.get('theme_config.modalColor')?.value">
+                    <h2 [style.color]="projectForm.get('theme_config.modalTitleColor')?.value">Enable Live Assistance</h2>
+                    <p [style.color]="projectForm.get('theme_config.modalBodyColor')?.value">To provide real-time, step-by-step guidance, UXIGuide needs your permission to interact with your screen and voice.</p>
+                    
+                    <div class="uxiguide-feature-row">
+                      <div class="uxiguide-icon-wrapper" [style.background]="projectForm.get('theme_config.featureIconColor')?.value" style="color: white; font-size: 18px;">📷</div>
+                      <div class="uxiguide-feature-text">
+                        <h3 [style.color]="projectForm.get('theme_config.featureTitleColor')?.value">Screen Awareness</h3>
+                        <p [style.color]="projectForm.get('theme_config.featureBodyColor')?.value">This allows the agent to see where you are on the page.</p>
+                      </div>
+                    </div>
+
+                    <div class="uxiguide-feature-row">
+                      <div class="uxiguide-icon-wrapper" [style.background]="projectForm.get('theme_config.featureIconColor')?.value" style="color: white; font-size: 18px;">🎤</div>
+                      <div class="uxiguide-feature-text">
+                        <h3 [style.color]="projectForm.get('theme_config.featureTitleColor')?.value">Voice Interaction</h3>
+                        <p [style.color]="projectForm.get('theme_config.featureBodyColor')?.value">Enable your microphone to talk naturally with the agent.</p>
+                      </div>
+                    </div>
+
+                    <div class="uxiguide-button-group">
+                      <button type="button" class="uxiguide-btn" 
+                        [style.background]="projectForm.get('theme_config.secondaryButtonColor')?.value" 
+                        [style.color]="projectForm.get('theme_config.onSecondaryButtonColor')?.value">
+                        Not now
+                      </button>
+                      <button type="button" class="uxiguide-btn" 
+                        [style.background]="projectForm.get('theme_config.primaryButtonColor')?.value" 
+                        [style.color]="projectForm.get('theme_config.onPrimaryButtonColor')?.value">
+                        Grant Access
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              }
+
+              <!-- 2. Next Step State -->
+              @if (previewState() === 'next') {
+                <button type="button" id="uxiguide-next-btn-mock" 
+                  [style.background-color]="projectForm.get('theme_config.nextBtnColor')?.value"
+                  [style.color]="projectForm.get('theme_config.onNextBtnColor')?.value">
+                  I've Done it, What's next?
+                </button>
+              }
+
+              <!-- 3. FAB State -->
+              <button type="button" id="uxiguide-fab-mock" 
+                [class.is-recording]="previewState() === 'recording' || previewState() === 'next'"
+                [style.background-color]="(previewState() === 'recording' || previewState() === 'next') ? '#ff4444' : projectForm.get('theme_config.fabColor')?.value"
+                [style.color]="projectForm.get('theme_config.onFabColor')?.value"
+                (click)="togglePreviewAction()">
+                <div class="fab-icon-parity" [innerHTML]="safeFabIcon()"></div>
+              </button>
+
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-
-    <div class="form-actions">
-      <button mat-button type="button" routerLink="/projects" [disabled]="isLoading()">Cancel</button>
-      <button mat-flat-button color="primary" type="submit" [disabled]="projectForm.invalid || isLoading()">
-        {{ isLoading() ? 'Saving...' : (isEditMode() ? 'Save Changes' : 'Create Project') }}
-      </button>
-    </div>
-  </form>
+  </div>
 </div>

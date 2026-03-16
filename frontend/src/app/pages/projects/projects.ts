@@ -126,14 +126,11 @@ export class ProjectsPage implements OnInit, AfterViewInit {
     const apiEndpoint = this.configService.apiEndpoint;
     const p = project.persona_config || { tone: '', speed: '', formality: '' };
     const t = project.theme_config || {};
-    
+
     return `<script 
   src="${cdnBase}/widget.js" 
   data-api-key="${project.api_key}" 
   data-endpoint="${apiEndpoint}"
-  data-persona-tone="${p.tone}"
-  data-persona-speed="${p.speed}"
-  data-persona-formality="${p.formality}"
   data-theme-fab-color="${t.fabColor || ''}"
   data-theme-on-fab-color="${t.onFabColor || ''}"
   data-theme-next-btn-color="${t.nextBtnColor || ''}"
