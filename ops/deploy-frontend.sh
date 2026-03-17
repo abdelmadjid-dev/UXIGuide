@@ -50,6 +50,12 @@ if [ -d "script/dist" ]; then
     cp -r script/dist/* deploy_tmp/${VERSION_TAG}/
 fi
 
+# Copy script public assets (audio, etc.)
+if [ -d "script/public" ]; then
+    echo "Copying Script Public Assets to /${VERSION_TAG}..."
+    cp -r script/public/* deploy_tmp/${VERSION_TAG}/
+fi
+
 # Copy the built Dashboard (if Angular exists)
 if [ -d "frontend/dist/frontend/browser" ]; then
     echo "Copying Dashboard UI to /${VERSION_TAG}/dashboard..."

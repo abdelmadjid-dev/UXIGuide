@@ -8,8 +8,9 @@ import {generateUIMap} from "./core/mapper.ts";
 
 import './ui/styles.css';
 
-const startingSound = new Audio('./starting.mp3');
-const captureSound = new Audio('./capture.mp3');
+// Audio assets will be initialized after script base path is detected
+let startingSound: HTMLAudioElement;
+let captureSound: HTMLAudioElement;
 
 class UXIGuideScript {
     private readonly apiKey: string;
@@ -105,6 +106,17 @@ class UXIGuideScript {
     static fromScript(): UXIGuideScript | null {
         const scriptEl = document.currentScript as HTMLScriptElement | null;
         if (!scriptEl) return null;
+
+        // Detect script origin to serve assets from CDN
+        const scriptUrl = new URL(scriptEl.src);
+        const scriptOrigin = scriptUrl.origin + scriptUrl.pathname.substring(0, scriptUrl.pathname.lastIndexOf('/'));
+        
+        startingSound = new Audio(`${scriptOrigin}/starting.mp3`);
+        captureSound = new Audio(`${scriptOrigin}/capture.mp3`);
+        
+        if (typeof window !== 'undefined') {
+            console.log(`UXIGuide: Audio assets origin: ${scriptOrigin}`);
+        }
 
         const apiKey = scriptEl.getAttribute('data-api-key');
         const endpoint = scriptEl.getAttribute('data-endpoint');
