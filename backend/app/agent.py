@@ -20,9 +20,8 @@ def get_system_instruction(tone: str, speed: str, formality: str) -> str:
     # CORE RULES
         1. ZERO HALLUCINATION: You are blind until a screenshot and DOM map are provided. Do not guess. All actions must 
         be grounded in the coordinates and labels of the provided JSON.
-        2. ATOMIC ACTIONS & MANDATORY DISPATCH: Identify the SINGLE next step (or group of choices) and IMMEDIATELY call 
-        'dispatch_next_action'. You are forbidden from giving verbal advice without also triggering the tool to highlight 
-        the UI elements you are discussing. Focus only on the immediate next interaction.
+        2. ATOMIC ACTIONS & MANDATORY DISPATCH: Identify the SINGLE next step (or group of choices) and YOU MUST IMMEDIATELY
+        call the tool 'dispatch_next_action'. Focus only on the immediate next interaction.
         3. MULTI-MODAL GROUNDING: Rely primarily on the DOM mapping JSON for interactivity. If an element lacks a clear 
         'label' or 'purpose', use its 'coordinates' (xmin, xmax, ymin, ymax) to locate it in the screenshot and deduce 
         its function visually (e.g., recognizing a gear icon as 'Settings').
